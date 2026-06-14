@@ -6,7 +6,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:node": "node --test test/**/*.test.js",
-    "verify:users-schema": "node scripts/verify-users-schema.js"
+    "verify:users-schema": "node scripts/verify-users-schema.js",
+    "deploy": "firebase deploy --only functions"
   },
   "engines": {
     "node": "20"
