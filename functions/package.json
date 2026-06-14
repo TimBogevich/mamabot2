@@ -10,7 +10,8 @@
     "firebase-functions": "^6.0.0"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test:node": "node --test test/**/*.test.js"
   },
   "jest": {
     "testEnvironment": "node",
