@@ -78,23 +78,167 @@ const doc = await db.collection("pregnancy_data").doc(docId).get();
 
 ---
 
-## 3. Коллекция `mood_logs` (планируется — FN-002)
+## 3. Коллекция `mood_logs`
 
-> Схема будет описана после выполнения задачи FN-002.
-> Предполагаемые поля: `userId`, `date`, `mood`, `energy`, `note`, `createdAt`.
+Хранит записи настроения и уровня энергии пользователя по дням.
+Каждый документ соответствует одному дню (одному пользователю — одна запись на дату,
+хотя технически ограничение не накладывается).
+
+ID документа: авто-генерируется Firestore.
+
+### Поля документа
+
+| Поле       | Тип                   | Обязательное | Nullable | Описание                                        |
+|------------|-----------------------|:------------:|:--------:|-------------------------------------------------|
+| `userId`   | `string`              |      ✅      |    ❌    | ID пользователя Telegram (string)               |
+| `date`     | `string` (ISO 8601)   |      ✅      |    ❌    | Дата в формате `YYYY-MM-DD`                     |
+| `mood`     | `number` (integer)    |      ✅      |    ❌    | Настроение (1–5; 1 = очень плохо, 5 = отлично)  |
+| `energy`   | `number` (integer)    |      ✅      |    ❌    | Уровень энергии (1–5; 1 = очень низкий, 5 = очень высокий) |
+| `note`     | `string`              |      ❌      |    ❌    | Опциональная заметка (по умолчанию `""`)         |
+| `createdAt`| `Timestamp`           |      ✅      |    ✅    | Время создания (Firestore serverTimestamp)       |
+
+> **Примечание:** Поле `createdAt` помечено как nullable, так как при создании
+> документа передаётся `FieldValue.serverTimestamp()`, который разрешается
+> в конкретное время только после записи в Firestore.
+
+### Пример документа (JSON)
+
+```json
+{
+  "userId": "123456789",
+  "date": "2026-06-15",
+  "mood": 4,
+  "energy": 3,
+  "note": "Чувствую себя хорошо сегодня",
+  "createdAt": "<server timestamp>"
+}
+```
+
+### Запросы
+
+**По userId + диапазон дат (основной паттерн):**
+
+```js
+const { getMoodLogsByUserAndDate } = require("./src/schemas/moodLogs");
+
+const logs = await getMoodLogsByUserAndDate(
+  db,
+  userId,
+  "2026-06-01",
+  "2026-06-15",
+);
+```
+
+Требуется составной индекс:
+- `mood_logs`: `userId` ASC, `date` DESC (описан в `firestore.indexes.json`)
+
+### Создание документа
+
+```js
+const { createMoodLog } = require("./src/schemas/moodLogs");
+
+const doc = createMoodLog({
+  userId: "123456789",
+  date: "2026-06-15",
+  mood: 4,
+  energy: 3,
+  note: "Всё отлично!",
+});
+
+await db.collection("mood_logs").add(doc);
+```
 
 ---
 
-## 4. Коллекция `nutrition_logs` (планируется — FN-002)
+## 4. Коллекция `nutrition_logs`
 
-> Схема будет описана после выполнения задачи FN-002.
-> Предполагаемые поля: `userId`, `date`, `meals`, `vitamins`, `water`, `createdAt`.
+Хранит записи о питании пользователя: приёмы пищи, витамины и потребление воды.
+Каждый документ соответствует одному приёму пищи (возможно несколько записей на один день).
+
+ID документа: авто-генерируется Firestore.
+
+### Поля документа
+
+| Поле           | Тип                   | Обязательное | Nullable | Описание                                                 |
+|----------------|-----------------------|:------------:|:--------:|----------------------------------------------------------|
+| `userId`       | `string`              |      ✅      |    ❌    | ID пользователя Telegram (string)                        |
+| `date`         | `string` (ISO 8601)   |      ✅      |    ❌    | Дата в формате `YYYY-MM-DD`                              |
+| `mealType`     | `string` (enum)       |      ✅      |    ❌    | Тип приёма пищи: `'breakfast'`, `'lunch'`, `'dinner'`, `'snack'` |
+| `foods`        | `array` of `string`   |      ✅      |    ❌    | Список съеденных продуктов (минимум 1 элемент)           |
+| `vitamins`     | `array` of `string`   |      ❌      |    ❌    | Список принятых витаминов (по умолчанию `[]`)            |
+| `waterGlasses` | `number` (integer)    |      ✅      |    ❌    | Количество выпитых стаканов воды (≥0, по умолчанию `0`)  |
+| `createdAt`    | `Timestamp`           |      ✅      |    ✅    | Время создания (Firestore serverTimestamp)               |
+
+> **Примечание:** Поле `createdAt` помечено как nullable, так как при создании
+> документа передаётся `FieldValue.serverTimestamp()`, который разрешается
+> в конкретное время только после записи в Firestore.
+
+### Пример документа (JSON)
+
+```json
+{
+  "userId": "123456789",
+  "date": "2026-06-15",
+  "mealType": "lunch",
+  "foods": ["куриная грудка", "бурый рис", "брокколи"],
+  "vitamins": ["витамин D", "железо"],
+  "waterGlasses": 3,
+  "createdAt": "<server timestamp>"
+}
+```
+
+### Запросы
+
+**По userId + диапазон дат (основной паттерн):**
+
+```js
+const { getNutritionLogsByUserAndDate } = require("./src/schemas/nutritionLogs");
+
+const logs = await getNutritionLogsByUserAndDate(
+  db,
+  userId,
+  "2026-06-01",
+  "2026-06-15",
+);
+```
+
+Требуется составной индекс:
+- `nutrition_logs`: `userId` ASC, `date` DESC (описан в `firestore.indexes.json`)
+
+### Создание документа
+
+```js
+const { createNutritionLog } = require("./src/schemas/nutritionLogs");
+
+const doc = createNutritionLog({
+  userId: "123456789",
+  date: "2026-06-15",
+  mealType: "lunch",
+  foods: ["салат", "рыба"],
+  vitamins: ["витамин C"],
+  waterGlasses: 2,
+});
+
+await db.collection("nutrition_logs").add(doc);
+```
+
+---
+
+## Составные индексы
+
+Файл `firestore.indexes.json` (в корне проекта) определяет составные индексы,
+необходимые для запросов по `userId + date`.
+
+| Коллекция        | Поля индекса        | Направление      |
+|------------------|---------------------|------------------|
+| `mood_logs`      | `userId`, `date`    | ASC, DESC        |
+| `nutrition_logs` | `userId`, `date`    | ASC, DESC        |
 
 ---
 
 ## Валидация данных
 
-Каждая схема экспортирует функцию `validatePregnancyData(doc)` для проверки
+Каждая схема экспортирует функцию `validate<Schema>(doc)` для проверки
 документа перед записью в Firestore. Функция возвращает:
 
 ```js
@@ -104,17 +248,31 @@ const doc = await db.collection("pregnancy_data").doc(docId).get();
 Пример использования:
 
 ```js
-const { validatePregnancyData } = require("./src/schemas/pregnancy_data.js");
+const { validateMoodLog } = require("./src/schemas/moodLogs");
 
-const result = validatePregnancyData(doc);
+const result = validateMoodLog(doc);
 if (!result.valid) {
   console.error("Validation errors:", result.errors);
 }
 ```
 
+| Схема              | Функция валидации              | Фабрика создания          | Помощник запросов                       |
+|--------------------|-------------------------------|---------------------------|----------------------------------------|
+| `pregnancy_data`   | `validatePregnancyData(doc)`   | —                         | —                                      |
+| `mood_logs`        | `validateMoodLog(doc)`         | `createMoodLog(params)`   | `getMoodLogsByUserAndDate(db, uid, start, end)` |
+| `nutrition_logs`   | `validateNutritionLog(doc)`    | `createNutritionLog(params)` | `getNutritionLogsByUserAndDate(db, uid, start, end)` |
+
 ## Исходный код
 
-- **Схема:** `functions/src/schemas/pregnancy_data.js`
-- **Тесты:** `functions/src/schemas/__tests__/pregnancy_data.test.js`
-- **Интеграционный тест:** `functions/src/schemas/__tests__/pregnancy_data.integration.test.js`
-- **Скрипт верификации:** `functions/scripts/verify-pregnancy-data.js`
+- **Схемы:**
+  - `functions/src/schemas/pregnancy_data.js`
+  - `functions/src/schemas/moodLogs.js`
+  - `functions/src/schemas/nutritionLogs.js`
+- **Тесты (unit + валидация):**
+  - `functions/src/schemas/__tests__/pregnancy_data.test.js`
+  - `functions/test/moodLogs.test.js` — `node --test`
+  - `functions/test/nutritionLogs.test.js` — `node --test`
+- **Скрипт верификации:**
+  - `functions/scripts/verify-pregnancy-data.js`
+- **Индексы:**
+  - `firestore.indexes.json` (корень проекта)

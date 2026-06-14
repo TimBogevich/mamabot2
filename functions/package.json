@@ -5,6 +5,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "vitest run",
+    "test:node": "node --test test/**/*.test.js",
     "verify:users-schema": "node scripts/verify-users-schema.js"
   },
   "engines": {
@@ -16,6 +17,7 @@
   },
   "devDependencies": {
     "eslint": "^9.39.4",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.8",
+    "jest": "^30.4.2"
   }
 }

@@ -1,7 +1,5 @@
 const {onRequest} = require("firebase-functions/v2/https");
-
-const TELEGRAM_API = "https://api.telegram.org";
-const TELEGRAM_TOKEN = "8780361867:AAEdAFfH380PXAAz3wKjFXVE0v95DKGgq-c";
+const {TELEGRAM_API, TELEGRAM_TOKEN, sendMessage} = require("./src/utils/telegram");
 
 exports.webhook = onRequest(
   {
@@ -26,6 +24,7 @@ exports.webhook = onRequest(
       const chatId = update.message.chat.id;
       const text = update.message.text;
 
+      // Echo the user's message back (will be replaced by router in Step 6)
       await sendMessage(chatId, text);
 
       res.sendStatus(200);
@@ -36,26 +35,7 @@ exports.webhook = onRequest(
   },
 );
 
-async function sendMessage(chatId, text) {
-  const url = `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendMessage`;
-  const body = JSON.stringify({
-    chat_id: chatId,
-    text: text,
-  });
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body,
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Telegram API error: ${response.status} ${err}`);
-  }
-
-  return response.json();
-}
 
 async function registerWebhook(req, res) {
   const webhookUrl = `https://${req.headers.host}/webhook`;

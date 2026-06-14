@@ -36,6 +36,10 @@ export default [
   {
     files: ['**/*.mjs', 'src/**/*.test.js'],
     languageOptions: {
+      globals: {
+        ...globals.jest,
+        vi: 'readonly',
+      },
       sourceType: 'module',
     },
   },

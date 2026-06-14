@@ -2,8 +2,8 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    // Allow CommonJS modules to be tested
-    globals: false,
+    // Enable globals for jest-like API (describe, it, expect, vi, etc.)
+    globals: true,
     environment: "node",
     include: ["src/**/*.test.js"],
   },
