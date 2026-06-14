@@ -5,3 +5,4 @@ node_modules/
 fusion.db
 fusion.db-wal
 fusion.db-shm
+.worktrees/
