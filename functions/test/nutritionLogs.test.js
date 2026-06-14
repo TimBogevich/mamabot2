@@ -27,7 +27,7 @@ const {
 // ---------------------------------------------------------------------------
 
 let _db = null;
-let _dbReady = false;
+let _dbReady; // undefined = not yet tried; false = failed; true = succeeded
 
 /**
  * Returns a Firestore instance if the backend is reachable, or null.
