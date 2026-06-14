@@ -21,7 +21,8 @@
     "@firebase/rules-unit-testing": "^5.0.1",
     "eslint": "^9.39.4",
     "firebase": "^12.14.0",
-    "vitest": "^4.1.8",
-    "jest": "^30.4.2"
+    "globals": "^17.6.0",
+    "jest": "^30.4.2",
+    "vitest": "^4.1.8"
   }
 }

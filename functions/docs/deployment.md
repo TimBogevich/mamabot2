@@ -63,6 +63,24 @@ A successful response looks like:
 }
 ```
 
+### Automated Verification
+
+Unit tests in [`src/__tests__/webhook.test.js`](../src/__tests__/webhook.test.js) validate the webhook registration flow:
+
+- Success response shape (`success`, `description`, `webhookUrl`)
+- Correct URL construction using the config-sourced Telegram bot token
+- Request host header derived webhook URL
+- Error handling for Telegram API failures and network errors
+- URL encoding of special characters
+- Integration test confirming the GET handler wiring to `registerWebhook`
+
+Run the tests locally:
+
+```bash
+cd functions
+pnpm test
+```
+
 ---
 
 ## Firestore Security Rules (firestore.rules)

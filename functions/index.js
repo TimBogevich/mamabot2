@@ -50,3 +50,5 @@ async function registerWebhook(req, res) {
     res.status(500).json({error: err.message});
   }
 }
+
+module.exports.registerWebhook = registerWebhook;
