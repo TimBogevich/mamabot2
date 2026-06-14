@@ -7,8 +7,16 @@
  * @module telegram
  */
 
+const functions = require("firebase-functions");
+
 const TELEGRAM_API = "https://api.telegram.org";
-const TELEGRAM_TOKEN = "8780361867:AAEdAFfH380PXAAz3wKjFXVE0v95DKGgq-c";
+const TELEGRAM_TOKEN = functions.config().telegram?.token || process.env.TELEGRAM_TOKEN;
+
+if (!TELEGRAM_TOKEN) {
+  throw new Error(
+    "TELEGRAM_TOKEN not configured. Set via firebase functions:config:set telegram.token or TELEGRAM_TOKEN env var."
+  );
+}
 
 /**
  * Send a message to a Telegram chat.

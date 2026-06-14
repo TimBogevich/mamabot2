@@ -1,8 +1,48 @@
 /**
  * Tests for shared Telegram utility module.
+ *
+ * Uses require.cache injection to mock firebase-functions because
+ * vi.mock does not reliably intercept CJS require() calls within
+ * the telegram module in this vitest environment.
  */
 
-const { TELEGRAM_API, TELEGRAM_TOKEN, sendMessage } = require("../../utils/telegram");
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { createRequire } from "node:module";
+
+const req = createRequire(import.meta.url);
+
+function injectFirebaseMock(configValue) {
+  const fbPath = req.resolve("firebase-functions");
+  req.cache[fbPath] = {
+    id: fbPath,
+    filename: fbPath,
+    loaded: true,
+    exports: {
+      config: () => configValue,
+    },
+  };
+}
+
+function clearTelegramCache() {
+  // Clear the telegram module from require cache so it re-evaluates
+  for (const key of Object.keys(req.cache)) {
+    if (key.includes("telegram.js")) {
+      delete req.cache[key];
+    }
+  }
+}
+
+function clearFirebaseCache() {
+  try {
+    const fbPath = req.resolve("firebase-functions");
+    delete req.cache[fbPath];
+  } catch { /* not cached yet */ }
+}
+
+// Inject mock before any module load
+injectFirebaseMock({ telegram: { token: "test:mock-telegram-token" } });
+
+const { TELEGRAM_API, TELEGRAM_TOKEN, sendMessage } = req("../../utils/telegram");
 
 const originalFetch = globalThis.fetch;
 
