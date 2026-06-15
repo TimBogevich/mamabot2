@@ -154,7 +154,7 @@ function validateLmpDate(text) {
 
   // Step 4: Must not be in the future (compare against today at midnight UTC)
   const today = new Date();
-  const todayUtc = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+  const todayUtc = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
 
   if (date > todayUtc) {
     return { valid: false, error: 'onboarding.date_in_future' };

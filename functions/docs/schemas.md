@@ -351,6 +351,7 @@ if (!result.valid) {
   - `firestore.indexes.json` (корень проекта)
 - **Обработчики:**
   - `functions/src/handlers/router.js` — центральный callback-роутер (диспетчеризация по префиксам: `menu_*`, `onboarding_*`, `settings_*`, `week_*`, `mood_*`, `nutrition_*`)
+
   - `functions/src/handlers/menu/mainMenu.js` — рендеринг главного меню (4 кнопки в 2 ряда, локализованные подписи)
 
 ---
