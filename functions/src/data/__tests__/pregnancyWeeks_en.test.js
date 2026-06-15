@@ -1,18 +1,18 @@
 import { describe, test, expect } from 'vitest';
 import { validatePregnancyData } from '../../schemas/pregnancy_data.js';
-import weeks from '../pregnancyWeeks_ru.json' with { type: 'json' };
+import weeks from '../pregnancyWeeks_en.json' with { type: 'json' };
 
 /**
  * Constructs a full pregnancy_data document from a week record.
  * Mirrors the structure the seed script will produce.
  *
- * @param {object} week - Week record from pregnancyWeeks_ru.json
+ * @param {object} week - Week record from pregnancyWeeks_en.json
  * @returns {object} Document-compatible object for schema validation
  */
 function toSeedDoc(week) {
   return {
     weekNumber: week.weekNumber,
-    language: 'ru',
+    language: 'en',
     babyDevelopment: week.babyDevelopment,
     motherChanges: '',
     nutritionTips: '',
@@ -25,7 +25,7 @@ function toSeedDoc(week) {
   };
 }
 
-describe('pregnancyWeeks_ru.json', () => {
+describe('pregnancyWeeks_en.json', () => {
   test('file is parseable valid JSON', () => {
     // If the import succeeded at top level, the file is valid JSON.
     // This test serves as an explicit assertion.
@@ -67,12 +67,12 @@ describe('pregnancyWeeks_ru.json', () => {
     });
   });
 
-  test('Cyrillic characters present in babyDevelopment across the file', () => {
-    const CYRILLIC_RE = /[\u0400-\u04FF]/;
-    const hasCyrillic = weeks.some((week) =>
-      CYRILLIC_RE.test(week.babyDevelopment),
+  test('Latin characters present in babyDevelopment across the file', () => {
+    const LATIN_RE = /[A-Za-z]/;
+    const hasLatin = weeks.some((week) =>
+      LATIN_RE.test(week.babyDevelopment),
     );
-    expect(hasCyrillic).toBe(true);
+    expect(hasLatin).toBe(true);
   });
 
   test('each record passes validatePregnancyData when wrapped as a seed document', () => {
@@ -89,13 +89,5 @@ describe('pregnancyWeeks_ru.json', () => {
         weeks[i - 1].babyWeightGrams,
       );
     }
-  });
-
-  test('toSeedDoc includes all 4 content-default empty-string fields required by the seed script', () => {
-    const doc = toSeedDoc(weeks[0]);
-    expect(doc).toHaveProperty('motherChanges', '');
-    expect(doc).toHaveProperty('nutritionTips', '');
-    expect(doc).toHaveProperty('vitaminRecommendations', '');
-    expect(doc).toHaveProperty('symptomsCommon', '');
   });
 });

@@ -73,6 +73,10 @@ async function main() {
     const docRef = db.collection(COLLECTION).doc(docId);
     await docRef.set({
       ...week,
+      motherChanges: '',
+      nutritionTips: '',
+      vitaminRecommendations: '',
+      symptomsCommon: '',
       language: 'ru',
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
@@ -87,6 +91,10 @@ async function main() {
     const docRef = db.collection(COLLECTION).doc(docId);
     await docRef.set({
       ...week,
+      motherChanges: '',
+      nutritionTips: '',
+      vitaminRecommendations: '',
+      symptomsCommon: '',
       language: 'en',
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
