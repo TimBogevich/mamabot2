@@ -249,7 +249,9 @@ async function handleLmpInput(chatId, text) {
   }
 
   // Step 6: Send EDD confirmation with inline keyboard
-  const eddConfirmText = await _t(chatId, 'onboarding.edd_confirm', { edd: edc });
+  // Format EDD from ISO (YYYY-MM-DD) to DD.MM.YYYY for user display
+  const eddDisplay = edc.split('-').reverse().join('.');
+  const eddConfirmText = await _t(chatId, 'onboarding.edd_confirm', { edd: eddDisplay });
   const eddCorrectLabel = await _t(chatId, 'onboarding.edd_correct');
   const eddEditLabel = await _t(chatId, 'onboarding.edd_edit');
 

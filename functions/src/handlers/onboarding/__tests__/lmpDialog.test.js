@@ -343,13 +343,13 @@ describe('handleLmpInput', () => {
     it('should send EDD confirmation message with inline keyboard', async () => {
       await handleLmpInput(CHAT_ID, '15.03.2026');
 
-      expect(mockT).toHaveBeenCalledWith(CHAT_ID, 'onboarding.edd_confirm', { edd: '2026-12-20' });
+      expect(mockT).toHaveBeenCalledWith(CHAT_ID, 'onboarding.edd_confirm', { edd: '20.12.2026' });
       expect(mockT).toHaveBeenCalledWith(CHAT_ID, 'onboarding.edd_correct');
       expect(mockT).toHaveBeenCalledWith(CHAT_ID, 'onboarding.edd_edit');
 
       expect(mockSendMessage).toHaveBeenCalledWith(
         CHAT_ID,
-        expect.stringContaining('2026-12-20'),
+        expect.stringContaining('20.12.2026'),
         {
           reply_markup: {
             inline_keyboard: [
