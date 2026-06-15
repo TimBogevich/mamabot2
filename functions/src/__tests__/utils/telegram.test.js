@@ -1,9 +1,5 @@
 /**
  * Tests for shared Telegram utility module.
- *
- * Uses require.cache injection to mock firebase-functions because
- * vi.mock does not reliably intercept CJS require() calls within
- * the telegram module in this vitest environment.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
@@ -11,20 +7,7 @@ import { createRequire } from "node:module";
 
 const req = createRequire(import.meta.url);
 
-function injectFirebaseMock(configValue) {
-  const fbPath = req.resolve("firebase-functions");
-  req.cache[fbPath] = {
-    id: fbPath,
-    filename: fbPath,
-    loaded: true,
-    exports: {
-      config: () => configValue,
-    },
-  };
-}
-
 function clearTelegramCache() {
-  // Clear the telegram module from require cache so it re-evaluates
   for (const key of Object.keys(req.cache)) {
     if (key.includes("telegram.js")) {
       delete req.cache[key];
@@ -32,17 +15,9 @@ function clearTelegramCache() {
   }
 }
 
-function clearFirebaseCache() {
-  try {
-    const fbPath = req.resolve("firebase-functions");
-    delete req.cache[fbPath];
-  } catch { /* not cached yet */ }
-}
+process.env.TELEGRAM_TOKEN = "test:mock-telegram-token";
 
-// Inject mock before any module load
-injectFirebaseMock({ telegram: { token: "test:mock-telegram-token" } });
-
-const { TELEGRAM_API, TELEGRAM_TOKEN, sendMessage, answerCallbackQuery } = req("../../utils/telegram");
+const { TELEGRAM_API, getTelegramToken, sendMessage, answerCallbackQuery } = req("../../utils/telegram");
 
 const originalFetch = globalThis.fetch;
 
@@ -65,7 +40,7 @@ describe("sendMessage", () => {
 
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     const [url, opts] = globalThis.fetch.mock.calls[0];
-    expect(url).toBe(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendMessage`);
+    expect(url).toBe(`${TELEGRAM_API}/bot${getTelegramToken()}/sendMessage`);
     expect(JSON.parse(opts.body)).toEqual({
       chat_id: 12345,
       text: "Hello",
@@ -137,7 +112,7 @@ describe("answerCallbackQuery", () => {
 
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     const [url, opts] = globalThis.fetch.mock.calls[0];
-    expect(url).toBe(`${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/answerCallbackQuery`);
+    expect(url).toBe(`${TELEGRAM_API}/bot${getTelegramToken()}/answerCallbackQuery`);
     expect(JSON.parse(opts.body)).toEqual({
       callback_query_id: "cb_123",
     });

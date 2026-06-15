@@ -7,15 +7,19 @@
  * @module telegram
  */
 
-const functions = require("firebase-functions");
-
 const TELEGRAM_API = "https://api.telegram.org";
-const TELEGRAM_TOKEN = functions.config().telegram?.token || process.env.TELEGRAM_TOKEN;
 
-if (!TELEGRAM_TOKEN) {
-  throw new Error(
-    "TELEGRAM_TOKEN not configured. Set via firebase functions:config:set telegram.token or TELEGRAM_TOKEN env var."
-  );
+let _telegramToken = null;
+
+function getTelegramToken() {
+  if (_telegramToken) return _telegramToken;
+  _telegramToken = process.env.TELEGRAM_TOKEN;
+  if (!_telegramToken) {
+    throw new Error(
+      "TELEGRAM_TOKEN not configured. Set via firebase functions:secrets:set TELEGRAM_TOKEN or TELEGRAM_TOKEN env var."
+    );
+  }
+  return _telegramToken;
 }
 
 /**
@@ -30,7 +34,7 @@ if (!TELEGRAM_TOKEN) {
  * @throws {Error} If the Telegram API returns a non-OK status.
  */
 async function sendMessage(chatId, text, options = {}) {
-  const url = `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/sendMessage`;
+  const url = `${TELEGRAM_API}/bot${getTelegramToken()}/sendMessage`;
   const body = {
     chat_id: chatId,
     text: text,
@@ -75,7 +79,7 @@ async function sendMessage(chatId, text, options = {}) {
  * @see https://core.telegram.org/bots/api#answercallbackquery
  */
 async function answerCallbackQuery(callbackQueryId, options = {}) {
-  const url = `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/answerCallbackQuery`;
+  const url = `${TELEGRAM_API}/bot${getTelegramToken()}/answerCallbackQuery`;
   const body = {
     callback_query_id: callbackQueryId,
     ...options,
@@ -102,4 +106,4 @@ async function answerCallbackQuery(callbackQueryId, options = {}) {
   }
 }
 
-module.exports = { TELEGRAM_API, TELEGRAM_TOKEN, sendMessage, answerCallbackQuery };
+module.exports = { TELEGRAM_API, getTelegramToken, sendMessage, answerCallbackQuery };

@@ -1,11 +1,15 @@
 const {onRequest} = require("firebase-functions/v2/https");
-const {TELEGRAM_API, TELEGRAM_TOKEN, sendMessage} = require("./src/utils/telegram");
+const {defineSecret} = require("firebase-functions/v2/params");
+const {TELEGRAM_API, getTelegramToken, sendMessage} = require("./src/utils/telegram");
 const { routeCallback } = require('./src/handlers/router');
 const languageDialog = require("./src/handlers/onboarding/languageDialog");
+
+const TELEGRAM_TOKEN = defineSecret("TELEGRAM_TOKEN");
 
 exports.webhook = onRequest(
   {
     invoker: "public",
+    secrets: [TELEGRAM_TOKEN],
   },
   async (req, res) => {
     if (req.method === "GET") {
@@ -67,7 +71,7 @@ async function registerWebhook(req, res) {
   const webhookUrl = `https://${req.headers.host}/webhook`;
 
   try {
-    const url = `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${encodeURIComponent(webhookUrl)}`;
+    const url = `${TELEGRAM_API}/bot${getTelegramToken()}/setWebhook?url=${encodeURIComponent(webhookUrl)}`;
     const response = await fetch(url);
     const data = await response.json();
 
