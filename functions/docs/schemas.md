@@ -33,6 +33,7 @@
 | `vitaminRecommendations`| `string`              |      ✅      |    ❌    | Рекомендации по витаминам                                 |
 | `symptomsCommon`        | `string`              |      ✅      |    ❌    | Типичные симптомы                                         |
 | `babySize`              | `string`              |      ✅      |    ❌    | Размер ребёнка (сравнение с фруктом/овощем)               |
+| `babyWeightGrams`       | `number` (integer)    |      ✅      |    ❌    | Вес ребёнка в граммах (1–5000)                            |
 | `createdAt`             | `Timestamp`           |      ✅      |    ✅    | Время создания (Firestore serverTimestamp)                |
 | `updatedAt`             | `Timestamp`           |      ✅      |    ✅    | Время последнего обновления (Firestore serverTimestamp)   |
 
@@ -52,6 +53,7 @@
   "vitaminRecommendations": "Фолиевая кислота 400 мкг/сутки",
   "symptomsCommon": "Усталость, чувствительность груди, тошнота",
   "babySize": "размером с маковое зёрнышко",
+  "babyWeightGrams": 4,
   "createdAt": "<server timestamp>",
   "updatedAt": "<server timestamp>"
 }
@@ -339,6 +341,7 @@ if (!result.valid) {
   - `functions/src/schemas/nutritionLogs.js`
 - **Тесты (unit + валидация):**
   - `functions/src/schemas/__tests__/pregnancy_data.test.js`
+  - `functions/src/schemas/__tests__/pregnancy_data.integration.test.js`
   - `functions/test/moodLogs.test.js` — `node --test`
   - `functions/test/nutritionLogs.test.js` — `node --test`
 - **Скрипт верификации:**

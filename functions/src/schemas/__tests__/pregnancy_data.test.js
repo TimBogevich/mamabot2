@@ -71,6 +71,7 @@ describe("PREGNANCY_DATA_FIELDS", () => {
     expect(f.required).toBe(true);
   });
 
+
   it("should include all content fields as required strings", () => {
     const contentFields = [
       "babyDevelopment",
