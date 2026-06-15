@@ -1,5 +1,5 @@
 const {onRequest} = require("firebase-functions/v2/https");
-const {defineSecret} = require("firebase-functions/v2/params");
+const {defineSecret} = require("firebase-functions/params");
 const {TELEGRAM_API, getTelegramToken, sendMessage} = require("./src/utils/telegram");
 const { routeCallback } = require('./src/handlers/router');
 const languageDialog = require("./src/handlers/onboarding/languageDialog");
