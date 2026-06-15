@@ -33,5 +33,50 @@
     "nutrition": "🍎 Nutrition",
     "vitamins": "💊 Vitamins",
     "settings": "⚙️ Settings"
+  },
+  "common": {
+    "back": "🔙 Back",
+    "cancel": "❌ Cancel",
+    "save": "💾 Save",
+    "done": "✅ Done",
+    "yes": "✅ Yes",
+    "no": "❌ No",
+    "error": "❌ An error occurred. Please try again later.",
+    "not_understood": "🤷 Didn't understand that. Please use the menu buttons."
+  },
+  "week_info": {
+    "title": "📋 Week {week} of Pregnancy",
+    "baby_development": "👶 Baby's Development",
+    "mother_changes": "🤱 Changes in Mom's Body",
+    "nutrition_tips": "🥗 Nutrition Tips",
+    "vitamin_recommendations": "💊 Vitamin Recommendations",
+    "symptoms": "⚠️ Symptoms",
+    "baby_size": "📏 Baby's Size"
+  },
+  "mood": {
+    "title": "😊 Mood Diary",
+    "prompt": "How are you feeling today?",
+    "great": "😄 Great",
+    "good": "🙂 Good",
+    "okay": "😐 Okay",
+    "bad": "😟 Bad",
+    "terrible": "😢 Terrible",
+    "saved": "✅ Mood saved!"
+  },
+  "nutrition": {
+    "title": "🍎 Nutrition",
+    "prompt": "Select a meal type:",
+    "meal_types": {
+      "breakfast": "🌅 Breakfast",
+      "lunch": "☀️ Lunch",
+      "dinner": "🌙 Dinner",
+      "snack": "🍪 Snack"
+    },
+    "saved": "✅ Meal saved!"
+  },
+  "notifications": {
+    "new_week": "🎉 Week {week} of pregnancy begins! See what's new.",
+    "vitamin_reminder": "💊 Don't forget to take your vitamins today!",
+    "partner_invite": "👩‍❤️‍👨 Invite your partner — your code: {code}"
   }
 }
