@@ -47,6 +47,7 @@ function userDocRef(chatId) {
  * @property {'ru'|'en'} language     — selected language
  * @property {string} [lmpDate]       — ISO date string (YYYY-MM-DD) of last menstrual period
  * @property {number} [currentWeek]   — computed current pregnancy week (1–42)
+ * @property {string} [eddDate]       — estimated due date in ISO format (YYYY-MM-DD), calculated via Naegele's rule
  * @property {string} [partnerCode]   — 6-character invite code for partner linking
  * @property {'mom'|'partner'} role   — user role
  * @property {FirebaseFirestore.Timestamp} createdAt    — Firestore server timestamp

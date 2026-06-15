@@ -34,6 +34,7 @@ const TEST_DOC = {
   language: "ru",
   lmpDate: "2026-01-15",
   currentWeek: 21,
+  eddDate: "2026-12-20",
   partnerCode: "ABC123",
   role: "mom",
 };
