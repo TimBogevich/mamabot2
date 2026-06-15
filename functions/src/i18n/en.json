@@ -10,15 +10,21 @@
     "lmp_confirmed": "✅ Date saved: {date}",
     "week_calculated": "🤰 You are {week} weeks pregnant!",
     "already_registered": "👋 You are already registered! Use the menu to navigate.",
+    "ask_edd": "📅 Enter the estimated due date in DD.MM.YYYY format:",
+    "edd_before_lmp": "❌ Due date cannot be before the last menstrual period ({{lmp}}). Please enter a valid date.",
+    "edd_calculated": "📅 Estimated due date: {edd}.",
     "edd_confirm": "📅 Estimated due date: {{edd}}. Correct?",
+    "edd_confirm_btn": "✅ Correct",
     "edd_correct": "✅ Correct",
     "edd_edit": "✏️ Edit",
+    "edd_edit_btn": "✏️ Edit",
     "edd_confirmed": "✅ EDD {{edd}} saved! You've successfully completed setup.",
-    "edd_prompt": "📅 Enter the estimated due date in DD.MM.YYYY format:",
+    "edd_invalid": "❌ Invalid date. Please enter a valid due date in DD.MM.YYYY format.",
     "edd_invalid_format": "❌ Invalid date format. Please enter the date in DD.MM.YYYY format.",
-    "edd_before_lmp": "❌ Due date cannot be before the last menstrual period ({{lmp}}). Please enter a valid date.",
-    "edd_too_late": "❌ Due date is too far from the last menstrual period (maximum 300 days). Please enter a valid date.",
-    "edd_saved": "✅ EDD {{edd}} saved! You've successfully completed setup."
+    "edd_prompt": "📅 Enter the estimated due date in DD.MM.YYYY format:",
+    "edd_saved": "✅ Due date saved: {edd}.",
+    "edd_too_far": "❌ Due date is too far from the last menstrual period (maximum 300 days). Please enter a valid date.",
+    "edd_too_late": "❌ Due date is too far from the last menstrual period (maximum 300 days). Please enter a valid date."
   },
   "menu": {
     "greeting": "🏠 Main menu — choose a section:",
@@ -27,50 +33,5 @@
     "nutrition": "🍎 Nutrition",
     "vitamins": "💊 Vitamins",
     "settings": "⚙️ Settings"
-  },
-  "common": {
-    "back": "🔙 Back",
-    "cancel": "❌ Cancel",
-    "save": "💾 Save",
-    "done": "✅ Done",
-    "yes": "✅ Yes",
-    "no": "❌ No",
-    "error": "❌ An error occurred. Please try again later.",
-    "not_understood": "🤷 Didn't understand that. Please use the menu buttons."
-  },
-  "week_info": {
-    "title": "📋 Week {week} of Pregnancy",
-    "baby_development": "👶 Baby's Development",
-    "mother_changes": "🤱 Changes in Mom's Body",
-    "nutrition_tips": "🥗 Nutrition Tips",
-    "vitamin_recommendations": "💊 Vitamin Recommendations",
-    "symptoms": "⚠️ Symptoms",
-    "baby_size": "📏 Baby's Size"
-  },
-  "mood": {
-    "title": "😊 Mood Diary",
-    "prompt": "How are you feeling today?",
-    "great": "😄 Great",
-    "good": "🙂 Good",
-    "okay": "😐 Okay",
-    "bad": "😟 Bad",
-    "terrible": "😢 Terrible",
-    "saved": "✅ Mood saved!"
-  },
-  "nutrition": {
-    "title": "🍎 Nutrition",
-    "prompt": "Select a meal type:",
-    "meal_types": {
-      "breakfast": "🌅 Breakfast",
-      "lunch": "☀️ Lunch",
-      "dinner": "🌙 Dinner",
-      "snack": "🍪 Snack"
-    },
-    "saved": "✅ Meal saved!"
-  },
-  "notifications": {
-    "new_week": "🎉 Week {week} of pregnancy begins! See what's new.",
-    "vitamin_reminder": "💊 Don't forget to take your vitamins today!",
-    "partner_invite": "👩‍❤️‍👨 Invite your partner — your code: {code}"
   }
 }
