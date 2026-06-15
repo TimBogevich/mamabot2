@@ -276,6 +276,8 @@ if (!result.valid) {
   - `functions/scripts/verify-pregnancy-data.js`
 - **Индексы:**
   - `firestore.indexes.json` (корень проекта)
+- **Обработчики:**
+  - `functions/src/handlers/menu/mainMenu.js` — рендеринг главного меню (4 кнопки в 2 ряда, локализованные подписи)
 
 ---
 
