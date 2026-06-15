@@ -86,8 +86,8 @@ const doc = await db.collection("pregnancy_data").doc(docId).get();
 | `lastName`   | `string`              |      ❌      |    ❌    | Фамилия пользователя Telegram                    |
 | `username`   | `string`              |      ❌      |    ❌    | @username в Telegram                             |
 | `language`   | `'ru'\|'en'`          |      ✅      |    ❌    | Выбранный язык (заполняется при онбординге)      |
-| `lmpDate`    | `string` (ISO 8601)   |      ❌      |    ❌    | Дата первого дня последней менструации           |
-| `currentWeek`| `number` (integer)    |      ❌      |    ❌    | Текущая неделя беременности (1–42)               |
+| `lmpDate`    | `string` (ISO 8601)   |      ❌      |    ❌    | Дата первого дня последней менструации в формате YYYY-MM-DD. Заполняется обработчиком `functions/src/handlers/onboarding/lmpDialog.js` во время онбординга. |
+| `currentWeek`| `number` (integer)    |      ❌      |    ❌    | Вычисленная текущая неделя беременности (1–42). Заполняется обработчиком `functions/src/handlers/onboarding/lmpDialog.js` вместе с `lmpDate`. |
 | `partnerCode`| `string`              |      ❌      |    ❌    | 6-символьный код для приглашения партнёра        |
 | `role`       | `'mom'\|'partner'`    |      ✅      |    ❌    | Роль пользователя                                |
 | `createdAt`  | `Timestamp`           |      ✅      |    ✅    | Время создания (Firestore serverTimestamp)       |
@@ -100,8 +100,27 @@ const doc = await db.collection("pregnancy_data").doc(docId).get();
    (`functions/src/handlers/onboarding/languageDialog.js`).
 2. **Обновление:** Поле `language` может быть обновлено через `setLanguage()`
    (i18n-модуль) или через меню настроек.
-3. **Другие поля** (`lmpDate`, `currentWeek`, `partnerCode`) заполняются
-   последующими шагами онбординга.
+3. **Другие поля** (`lmpDate`, `currentWeek`) заполняются обработчиком
+   `functions/src/handlers/onboarding/lmpDialog.js` после успешного ввода и проверки
+   даты последней менструации. Поле `partnerCode` заполняется последующими шагами онбординга.
+
+### Использование в боте
+
+Пользователь создаётся при первом запуске бота (`/start`). После выбора языка
+и ввода даты ПМ поля `lmpDate` и `currentWeek` заполняются автоматически.
+
+```js
+const { getUser, updateUser } = require('./collections/users');
+
+// Получить пользователя
+const user = await getUser(chatId);
+
+// Обновить поля
+await updateUser(chatId, {
+  lmpDate: '2026-03-15',
+  currentWeek: 14,
+});
+```
 
 ### Пример документа (JSON)
 
@@ -122,6 +141,8 @@ const doc = await db.collection("pregnancy_data").doc(docId).get();
 ### Исходный код
 
 - `functions/src/collections/users.js` — CRUD-хелперы (`createUser`, `getUser`, `updateUser`)
+- `functions/src/handlers/onboarding/lmpDialog.js` — обработчик ввода даты ПМ
+- `functions/src/handlers/onboarding/languageDialog.js` — обработчик выбора языка
 - `functions/src/firestore.js` — инициализация Firestore клиента
 
 ---

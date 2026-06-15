@@ -6,10 +6,11 @@
     "language_en": "🇬🇧 English",
     "language_saved": "✅ Language set to {{lang}}!",
     "already_registered": "👋 You're already registered! Use the menu to navigate.",
-    "ask_lmp": "📅 Enter the first day of your last menstrual period in YYYY-MM-DD format:",
-    "lmp_format_hint": "Please use YYYY-MM-DD format, e.g. 2026-01-15.",
-    "invalid_date": "❌ Invalid date format. Please enter the date in YYYY-MM-DD format.",
+    "ask_lmp": "📅 Enter the first day of your last menstrual period in DD.MM.YYYY format:",
+    "lmp_format_hint": "Please use DD.MM.YYYY format, e.g. 15.03.2026.",
+    "invalid_date": "❌ Invalid date format. Please enter the date in DD.MM.YYYY format.",
     "date_in_future": "❌ Date cannot be in the future. Please enter a valid date.",
+    "date_too_old": "⚠️ This date is more than 42 weeks ago. A typical pregnancy lasts about 40 weeks. Please check the date and try again.",
     "week_calculated": "🤰 You are {{week}} weeks pregnant! Estimated due date: {{edc}}."
   },
   "menu": {
