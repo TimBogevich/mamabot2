@@ -43,6 +43,7 @@ const TEST_DOC = {
   symptomsCommon:
     "Усталость, чувствительность груди, тошнота, повышенная утомляемость",
   babySize: "размером с маковое зёрнышко",
+  babyWeightGrams: 1,
 };
 
 async function main() {
