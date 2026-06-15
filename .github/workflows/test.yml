@@ -26,13 +26,13 @@ jobs:
         run: npm run lint
         working-directory: functions
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests (unit + integration, no emulator)
+        run: npx vitest run --exclude 'test/rules/**'
         working-directory: functions
 
       # Java is pre-installed on ubuntu-latest and emulators:exec auto-manages the
       # Firestore emulator lifecycle (start, env-var export, wait-for-ready, shutdown).
       # No external auth needed — the emulator sets FIRESTORE_EMULATOR_HOST locally.
-      - name: Verify users schema (emulator)
-        run: npx firebase emulators:exec --only firestore --project mamabot-97d22 "npm run verify:users-schema"
+      - name: Run rules tests + verify users schema (emulator)
+        run: npx firebase emulators:exec --only firestore --project mamabot-97d22 "npm run test:rules && npm run verify:users-schema"
         working-directory: functions
