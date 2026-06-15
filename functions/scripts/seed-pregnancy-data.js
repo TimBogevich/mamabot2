@@ -34,17 +34,20 @@ function loadJSON(filename) {
   return require(filePath);
 }
 
-async function main() {
-  console.log('\n  \u{1F331} Seeding pregnancy_data collection\u2026\n');
-  console.log('  Project:  ' + PROJECT_ID);
-  const backend = process.env.FIRESTORE_EMULATOR_HOST ? 'emulator' : 'Firestore (ADC)';
-  console.log('  Backend:  ' + backend + '\n');
-
+/**
+ * Seeds the pregnancy_data Firestore collection with bilingual pregnancy week data.
+ *
+ * Loads pregnancyWeeks_ru.json and pregnancyWeeks_en.json, validates them
+ * (expects 40 records each), and writes each week as a Firestore document
+ * using composite {weekNumber}_{language} document IDs with set() for idempotency.
+ *
+ * @param {import('firebase-admin/firestore').Firestore} db - Initialized Firestore instance
+ * @returns {Promise<{ru: number, en: number}>} Summary of documents written per language
+ */
+async function seedPregnancyData(db) {
   // Load data
   const ruWeeks = loadJSON('pregnancyWeeks_ru.json');
   const enWeeks = loadJSON('pregnancyWeeks_en.json');
-
-  console.log('  \u{1F4D6} Loaded ' + ruWeeks.length + ' weeks (ru), ' + enWeeks.length + ' weeks (en)\n');
 
   // Validate both have 40 weeks
   if (ruWeeks.length !== 40) {
@@ -54,20 +57,7 @@ async function main() {
     throw new Error('Expected 40 weeks for en, got ' + enWeeks.length);
   }
 
-  // Initialize Firestore
-  if (getApps().length === 0) {
-    initializeApp({ projectId: PROJECT_ID });
-  }
-  const db = getFirestore();
-  if (process.env.FIRESTORE_EMULATOR_HOST) {
-    db.settings({
-      host: process.env.FIRESTORE_EMULATOR_HOST,
-      ssl: false,
-    });
-  }
-
   // Seed Russian weeks
-  console.log('  \u{1F1F7}\u{1F1FA} Seeding Russian pregnancy weeks\u2026');
   for (const week of ruWeeks) {
     const docId = week.weekNumber + '_ru';
     const docRef = db.collection(COLLECTION).doc(docId);
@@ -82,10 +72,8 @@ async function main() {
       updatedAt: FieldValue.serverTimestamp(),
     });
   }
-  console.log('  \u2705 Seeded ' + ruWeeks.length + ' ru documents\n');
 
   // Seed English weeks
-  console.log('  \u{1F1EC}\u{1F1E7} Seeding English pregnancy weeks\u2026');
   for (const week of enWeeks) {
     const docId = week.weekNumber + '_en';
     const docRef = db.collection(COLLECTION).doc(docId);
@@ -100,17 +88,45 @@ async function main() {
       updatedAt: FieldValue.serverTimestamp(),
     });
   }
-  console.log('  \u2705 Seeded ' + enWeeks.length + ' en documents\n');
 
-  console.log('  \u{1F389} Seeded ' + ruWeeks.length + ' pregnancies for ru, ' + enWeeks.length + ' for en\n');
+  return { ru: ruWeeks.length, en: enWeeks.length };
+}
+
+async function main() {
+  console.log('\n  \u{1F331} Seeding pregnancy_data collection\u2026\n');
+  console.log('  Project:  ' + PROJECT_ID);
+  const backend = process.env.FIRESTORE_EMULATOR_HOST ? 'emulator' : 'Firestore (ADC)';
+  console.log('  Backend:  ' + backend + '\n');
+
+  console.log('  \u{1F4D6} Loading pregnancy week data\u2026\n');
+
+  // Initialize Firestore
+  if (getApps().length === 0) {
+    initializeApp({ projectId: PROJECT_ID });
+  }
+  const db = getFirestore();
+  if (process.env.FIRESTORE_EMULATOR_HOST) {
+    db.settings({
+      host: process.env.FIRESTORE_EMULATOR_HOST,
+      ssl: false,
+    });
+  }
+
+  const result = await seedPregnancyData(db);
+
+  console.log('  \u{1F389} Seeded ' + result.ru + ' pregnancies for ru, ' + result.en + ' for en\n');
   process.exit(0);
 }
 
-main().catch(function (err) {
-  console.error('\n  \u274C Error: ' + err.message + '\n');
-  console.error('  Make sure one of these is set:\n');
-  console.error('    FIRESTORE_EMULATOR_HOST=localhost:8080');
-  console.error('    GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json');
-  console.error('    (or run: gcloud auth application-default login)\n');
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(function (err) {
+    console.error('\n  \u274C Error: ' + err.message + '\n');
+    console.error('  Make sure one of these is set:\n');
+    console.error('    FIRESTORE_EMULATOR_HOST=localhost:8080');
+    console.error('    GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json');
+    console.error('    (or run: gcloud auth application-default login)\n');
+    process.exit(1);
+  });
+}
+
+module.exports = { seedPregnancyData, main };
