@@ -68,6 +68,13 @@ The Functions source directory is `functions/` as declared in [`firebase.json`](
 3. Uploads to Firebase Cloud Functions (runtime: `nodejs20`)
 4. Makes the functions available at Firebase-assigned HTTPS endpoints
 
+### Deployed Functions
+
+| Function | Type | Trigger | Description |
+|----------|------|---------|-------------|
+| `webhook` | HTTPS | HTTP request | Handles incoming Telegram updates (messages, callbacks) |
+| `sendWeeklyNotifications` | Scheduled | `every day 09:00` Europe/Moscow | Queries users with LMP date, computes pregnancy week, prepares weekly notifications |
+
 ---
 
 ## Security Rules Deployment
