@@ -262,13 +262,6 @@ if (!result.valid) {
 | `mood_logs`        | `validateMoodLog(doc)`         | `createMoodLog(params)`   | `getMoodLogsByUserAndDate(db, uid, start, end)` |
 | `nutrition_logs`   | `validateNutritionLog(doc)`    | `createNutritionLog(params)` | `getNutritionLogsByUserAndDate(db, uid, start, end)` |
 
-## Деплой и конфигурация
-
-Инструкции по настройке токена Telegram-бота, переменных окружения и деплою
-функции — в [документации деплоя](./deployment.md).
-
----
-
 ## Исходный код
 
 - **Схемы:**

@@ -5,7 +5,7 @@
   "scripts": {
     "lint": "eslint .",
     "test": "vitest run",
-    "test:node": "node --test test/**/*.test.js",
+    "test:node": "node --test test/*.test.js",
     "test:rules": "vitest run test/rules/",
     "verify:users-schema": "node scripts/verify-users-schema.js",
     "deploy": "firebase deploy --only functions"
