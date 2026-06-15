@@ -7,6 +7,8 @@
     "test": "vitest run",
     "test:node": "node --test test/*.test.js",
     "test:rules": "vitest run test/rules/",
+    "test:rules:partners": "vitest run test/rules/firestore.rules.test.js --reporter=dot -t 'partners'",
+    "seed:pregnancy-data": "node scripts/seed-pregnancy-data.js",
     "verify:users-schema": "node scripts/verify-users-schema.js",
     "deploy": "firebase deploy --only functions"
   },
@@ -14,13 +16,15 @@
     "node": "20"
   },
   "dependencies": {
+    "@google-cloud/functions-framework": "^5.0.2",
+    "@rolldown/pluginutils": "^1.0.1",
     "firebase-admin": "^12.0.0",
     "firebase-functions": "^6.0.0"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",
     "eslint": "^9.39.4",
-
+    "firebase-tools": "^15.20.0",
     "globals": "^17.6.0",
     "jest": "^30.4.2",
     "vitest": "^4.1.8"

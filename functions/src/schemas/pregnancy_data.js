@@ -62,6 +62,13 @@ const PREGNANCY_DATA_FIELDS = {
     required: true,
     description: "Размер ребёнка (сравнение)",
   },
+  babyWeightGrams: {
+    type: "number",
+    required: true,
+    description: "Вес ребёнка в граммах на этой неделе",
+    validate: (v) =>
+      typeof v === "number" && Number.isInteger(v) && v > 0 && v <= 5000,
+  },
   createdAt: {
     type: "Timestamp",
     required: true,

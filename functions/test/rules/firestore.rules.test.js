@@ -389,30 +389,126 @@ describe('pregnancy_data collection', () => {
 // Коллекция partners (заглушка)
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('partners collection (stub)', () => {
+describe('partners collection', () => {
 
-  it('authenticated Alice can read partners/doc', async () => {
-    await seed('partners', 'pair1', { partnerId: '222' });
+  // ── Active partnership: momChatId='111', partnerChatId='222' ──────────
 
-    const alice = aliceAuth();
+  it("Mom (uid='111') can read her own partnership partners/ABC123", async () => {
+    await seed('partners', 'ABC123', {
+      partnerCode: 'ABC123', momChatId: '111', partnerChatId: '222',
+      status: 'active', createdAt: null, updatedAt: null,
+    });
+
+    const mom = testEnv.authenticatedContext('111');
     await assertSucceeds(
-      alice.firestore().collection('partners').doc('pair1').get(),
+      mom.firestore().collection('partners').doc('ABC123').get(),
     );
   });
 
-  it('authenticated Alice CANNOT write to partners/doc', async () => {
-    const alice = aliceAuth();
+  it("Partner (uid='222') can read linked partnership partners/ABC123", async () => {
+    await seed('partners', 'ABC123', {
+      partnerCode: 'ABC123', momChatId: '111', partnerChatId: '222',
+      status: 'active', createdAt: null, updatedAt: null,
+    });
+
+    const partner = testEnv.authenticatedContext('222');
+    await assertSucceeds(
+      partner.firestore().collection('partners').doc('ABC123').get(),
+    );
+  });
+
+  it("Stranger (uid='999') CANNOT read partners/ABC123", async () => {
+    await seed('partners', 'ABC123', {
+      partnerCode: 'ABC123', momChatId: '111', partnerChatId: '222',
+      status: 'active', createdAt: null, updatedAt: null,
+    });
+
+    const stranger = testEnv.authenticatedContext('999');
     await assertFails(
-      alice.firestore().collection('partners').doc('pair1').set({ partnerId: '222' }),
+      stranger.firestore().collection('partners').doc('ABC123').get(),
     );
   });
 
-  it('unauthenticated user CANNOT read partners/doc', async () => {
-    await seed('partners', 'pair1', { partnerId: '222' });
+  it('unauthenticated user CANNOT read partners/ABC123', async () => {
+    await seed('partners', 'ABC123', {
+      partnerCode: 'ABC123', momChatId: '111', partnerChatId: '222',
+      status: 'active', createdAt: null, updatedAt: null,
+    });
 
     const guest = unauth();
     await assertFails(
-      guest.firestore().collection('partners').doc('pair1').get(),
+      guest.firestore().collection('partners').doc('ABC123').get(),
+    );
+  });
+
+  // ── Pending partnership: momChatId='333', partnerChatId=null ──────────
+
+  it("Mom (uid='333') can read her pending partnership partners/XYZ789", async () => {
+    await seed('partners', 'XYZ789', {
+      partnerCode: 'XYZ789', momChatId: '333', partnerChatId: null,
+      status: 'pending', createdAt: null, updatedAt: null,
+    });
+
+    const mom = testEnv.authenticatedContext('333');
+    await assertSucceeds(
+      mom.firestore().collection('partners').doc('XYZ789').get(),
+    );
+  });
+
+  it("Stranger (uid='999') CANNOT read pending partnership partners/XYZ789", async () => {
+    await seed('partners', 'XYZ789', {
+      partnerCode: 'XYZ789', momChatId: '333', partnerChatId: null,
+      status: 'pending', createdAt: null, updatedAt: null,
+    });
+
+    const stranger = testEnv.authenticatedContext('999');
+    await assertFails(
+      stranger.firestore().collection('partners').doc('XYZ789').get(),
+    );
+  });
+
+  it('unauthenticated user CANNOT read pending partnership partners/XYZ789', async () => {
+    await seed('partners', 'XYZ789', {
+      partnerCode: 'XYZ789', momChatId: '333', partnerChatId: null,
+      status: 'pending', createdAt: null, updatedAt: null,
+    });
+
+    const guest = unauth();
+    await assertFails(
+      guest.firestore().collection('partners').doc('XYZ789').get(),
+    );
+  });
+
+  // ── Write ──────────────────────────────────────────────────────────────
+
+  it("Mom CANNOT write to her own partnership partners/ABC123", async () => {
+    await seed('partners', 'ABC123', {
+      partnerCode: 'ABC123', momChatId: '111', partnerChatId: '222',
+      status: 'active', createdAt: null, updatedAt: null,
+    });
+
+    const mom = testEnv.authenticatedContext('111');
+    await assertFails(
+      mom.firestore().collection('partners').doc('ABC123').set({ status: 'inactive' }),
+    );
+  });
+
+  it("Partner CANNOT write to linked partnership partners/ABC123", async () => {
+    await seed('partners', 'ABC123', {
+      partnerCode: 'ABC123', momChatId: '111', partnerChatId: '222',
+      status: 'active', createdAt: null, updatedAt: null,
+    });
+
+    const partner = testEnv.authenticatedContext('222');
+    await assertFails(
+      partner.firestore().collection('partners').doc('ABC123').set({ status: 'inactive' }),
+    );
+  });
+
+  it('unauthenticated user CANNOT write to partners/ABC123', async () => {
+    const guest = unauth();
+    await assertFails(
+      guest.firestore().collection('partners').doc('ABC123').set({ status: 'active' }),
     );
   });
 });

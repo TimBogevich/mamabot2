@@ -48,6 +48,7 @@ const TEST_DOC = Object.freeze({
     "Усталость, чувствительность груди, тошнота, " +
     "повышенная утомляемость",
   babySize: "размером с маковое зёрнышко",
+  babyWeightGrams: 4,
 });
 
 // ---------------------------------------------------------------------------
@@ -149,6 +150,7 @@ describe("pregnancy_data — Firestore integration", () => {
       );
       expect(data.symptomsCommon).toBe(TEST_DOC.symptomsCommon);
       expect(data.babySize).toBe(TEST_DOC.babySize);
+      expect(data.babyWeightGrams).toBe(TEST_DOC.babyWeightGrams);
       // Timestamps should be Firestore Timestamp objects
       expect(data.createdAt).toBeDefined();
       expect(data.updatedAt).toBeDefined();

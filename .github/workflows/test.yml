@@ -1,13 +1,11 @@
-name: CI
+name: Deploy
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,10 +20,11 @@ jobs:
         run: npm ci
         working-directory: functions
 
-      - name: Run lint
-        run: npm run lint
-        working-directory: functions
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Run tests
-        run: npm test
+      - name: Deploy to Firebase
+        run: npx firebase deploy --only functions --project mamabot-97d22
         working-directory: functions

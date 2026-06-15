@@ -33,6 +33,7 @@
 | `vitaminRecommendations`| `string`              |      ✅      |    ❌    | Рекомендации по витаминам                                 |
 | `symptomsCommon`        | `string`              |      ✅      |    ❌    | Типичные симптомы                                         |
 | `babySize`              | `string`              |      ✅      |    ❌    | Размер ребёнка (сравнение с фруктом/овощем)               |
+| `babyWeightGrams`       | `number` (integer)    |      ✅      |    ❌    | Вес ребёнка в граммах (1–5000)                            |
 | `createdAt`             | `Timestamp`           |      ✅      |    ✅    | Время создания (Firestore serverTimestamp)                |
 | `updatedAt`             | `Timestamp`           |      ✅      |    ✅    | Время последнего обновления (Firestore serverTimestamp)   |
 
@@ -52,6 +53,7 @@
   "vitaminRecommendations": "Фолиевая кислота 400 мкг/сутки",
   "symptomsCommon": "Усталость, чувствительность груди, тошнота",
   "babySize": "размером с маковое зёрнышко",
+  "babyWeightGrams": 4,
   "createdAt": "<server timestamp>",
   "updatedAt": "<server timestamp>"
 }
@@ -71,10 +73,79 @@ const doc = await db.collection("pregnancy_data").doc(docId).get();
 
 ---
 
-## 2. Коллекция `users` (планируется — FN-001)
+## 2. Коллекция `users`
 
-> Базовая схема будет описана после выполнения задачи FN-001.
-> Предполагаемые поля: `userId`, `telegramId`, `language`, `pregnancyWeek`, `createdAt`.
+Хранит профили пользователей бота. Каждый документ соответствует одному
+пользователю Telegram. ID документа — `String(chatId)`.
+
+### Поля документа
+
+| Поле         | Тип                   | Обязательное | Nullable | Описание                                        |
+|--------------|-----------------------|:------------:|:--------:|-------------------------------------------------|
+| `chatId`     | `number`              |      ✅      |    ❌    | Telegram chat ID (также ID документа)            |
+| `userId`     | `string`              |      ✅      |    ❌    | Telegram user ID (из `from.id`)                  |
+| `firstName`  | `string`              |      ✅      |    ❌    | Имя пользователя Telegram                        |
+| `lastName`   | `string`              |      ❌      |    ❌    | Фамилия пользователя Telegram                    |
+| `username`   | `string`              |      ❌      |    ❌    | @username в Telegram                             |
+| `language`   | `'ru'\|'en'`          |      ✅      |    ❌    | Выбранный язык (заполняется при онбординге)      |
+| `lmpDate`    | `string` (ISO 8601)   |      ❌      |    ❌    | Дата первого дня последней менструации в формате YYYY-MM-DD. Заполняется обработчиком `functions/src/handlers/onboarding/lmpDialog.js` во время онбординга. |
+| `currentWeek`| `number` (integer)    |      ❌      |    ❌    | Вычисленная текущая неделя беременности (1–42). Заполняется обработчиком `functions/src/handlers/onboarding/lmpDialog.js` вместе с `lmpDate`. |
+| `partnerCode`| `string`              |      ❌      |    ❌    | 6-символьный код для приглашения партнёра        |
+| `role`       | `'mom'\|'partner'`    |      ✅      |    ❌    | Роль пользователя                                |
+| `createdAt`  | `Timestamp`           |      ✅      |    ✅    | Время создания (Firestore serverTimestamp)       |
+| `updatedAt`  | `Timestamp`           |      ✅      |    ✅    | Время последнего обновления (serverTimestamp)    |
+
+### Жизненный цикл документа
+
+1. **Создание:** Документ создаётся при первом взаимодействии пользователя с
+   ботом — когда пользователь нажимает кнопку выбора языка в диалоге онбординга
+   (`functions/src/handlers/onboarding/languageDialog.js`).
+2. **Обновление:** Поле `language` может быть обновлено через `setLanguage()`
+   (i18n-модуль) или через меню настроек.
+3. **Другие поля** (`lmpDate`, `currentWeek`) заполняются обработчиком
+   `functions/src/handlers/onboarding/lmpDialog.js` после успешного ввода и проверки
+   даты последней менструации. Поле `partnerCode` заполняется последующими шагами онбординга.
+
+### Использование в боте
+
+Пользователь создаётся при первом запуске бота (`/start`). После выбора языка
+и ввода даты ПМ поля `lmpDate` и `currentWeek` заполняются автоматически.
+
+```js
+const { getUser, updateUser } = require('./collections/users');
+
+// Получить пользователя
+const user = await getUser(chatId);
+
+// Обновить поля
+await updateUser(chatId, {
+  lmpDate: '2026-03-15',
+  currentWeek: 14,
+});
+```
+
+### Пример документа (JSON)
+
+```json
+{
+  "chatId": 123456789,
+  "userId": "123456789",
+  "firstName": "Анна",
+  "lastName": "Иванова",
+  "username": "anna_i",
+  "language": "ru",
+  "role": "mom",
+  "createdAt": "<server timestamp>",
+  "updatedAt": "<server timestamp>"
+}
+```
+
+### Исходный код
+
+- `functions/src/collections/users.js` — CRUD-хелперы (`createUser`, `getUser`, `updateUser`)
+- `functions/src/handlers/onboarding/lmpDialog.js` — обработчик ввода даты ПМ
+- `functions/src/handlers/onboarding/languageDialog.js` — обработчик выбора языка
+- `functions/src/firestore.js` — инициализация Firestore клиента
 
 ---
 
@@ -270,12 +341,17 @@ if (!result.valid) {
   - `functions/src/schemas/nutritionLogs.js`
 - **Тесты (unit + валидация):**
   - `functions/src/schemas/__tests__/pregnancy_data.test.js`
+  - `functions/src/schemas/__tests__/pregnancy_data.integration.test.js`
   - `functions/test/moodLogs.test.js` — `node --test`
   - `functions/test/nutritionLogs.test.js` — `node --test`
-- **Скрипт верификации:**
-  - `functions/scripts/verify-pregnancy-data.js`
+- **Скрипты:**
+  - `functions/scripts/seed-pregnancy-data.js` — загрузка 40 недель (ru + en) в `pregnancy_data`
+  - `functions/scripts/verify-pregnancy-data.js` — верификация схемы документа
 - **Индексы:**
   - `firestore.indexes.json` (корень проекта)
+- **Обработчики:**
+  - `functions/src/handlers/router.js` — центральный callback-роутер (диспетчеризация по префиксам: `menu_*`, `onboarding_*`, `settings_*`, `week_*`, `mood_*`, `nutrition_*`)
+  - `functions/src/handlers/menu/mainMenu.js` — рендеринг главного меню (4 кнопки в 2 ряда, локализованные подписи)
 
 ---
 
@@ -293,3 +369,12 @@ if (!result.valid) {
 - **Fallback:** язык пользователя → русский → сырой ключ.
 
 Подробная документация: [`docs/i18n.md`](./i18n.md).
+
+### Ключи онбординга
+
+| Ключ                    | Описание                                                     | Плейсхолдеры |
+|-------------------------|--------------------------------------------------------------|-------------|
+| `onboarding.language_ru`| Текст кнопки «🇷🇺 Русский» (одинаков в обоих locale-файлах)   | —           |
+| `onboarding.language_en`| Текст кнопки «🇬🇧 English» (одинаков в обоих locale-файлах)   | —           |
+| `onboarding.language_saved` | Подтверждение выбора языка                               | `{{lang}}`  |
+| `onboarding.already_registered` | Сообщение для повторного /start                       | —           |

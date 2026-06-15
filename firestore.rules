@@ -55,11 +55,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── Коллекция partners (заглушка) ────────────────────────────
-    // Схема partners будет уточнена в будущей задаче.
-    // Пока: чтение только аутентифицированным, запись только серверу.
-    match /partners/{docId} {
-      allow read: if request.auth != null;
+    // ── Коллекция partners ───────────────────────────────────────
+    // Мама или привязанный партнёр могут читать свой partnership.
+    // Запись — только через firebase-admin (сервер).
+    match /partners/{partnerCode} {
+      allow read: if request.auth != null
+               && (resource.data.momChatId == request.auth.uid
+                   || resource.data.partnerChatId == request.auth.uid);
       allow write: if false;
     }
 

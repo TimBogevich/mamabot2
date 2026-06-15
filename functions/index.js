@@ -1,9 +1,28 @@
 const {onRequest} = require("firebase-functions/v2/https");
-const {TELEGRAM_API, TELEGRAM_TOKEN, sendMessage} = require("./src/utils/telegram");
+const {defineSecret} = require("firebase-functions/params");
+const {TELEGRAM_API, getTelegramToken, sendMessage} = require("./src/utils/telegram");
+const { routeCallback } = require('./src/handlers/router');
+const languageDialog = require("./src/handlers/onboarding/languageDialog");
+const { getUser } = require('./src/collections/users');
+
+// ---------------------------------------------------------------------------
+// Graceful degradation — FN-007 (editEdd handler) may not be merged yet
+// ---------------------------------------------------------------------------
+
+/** @type {((chatId: number|string, text: string) => Promise<Object>)|null} */
+let _handleEditEddInput = null;
+try {
+  _handleEditEddInput = require('./src/handlers/onboarding/editEdd').handleEditEddInput;
+} catch (_err) {
+  // FN-007 ещё не смержен — текстовый ввод ПДР будет обработан как echo
+}
+
+const TELEGRAM_TOKEN = defineSecret("TELEGRAM_TOKEN");
 
 exports.webhook = onRequest(
   {
     invoker: "public",
+    secrets: [TELEGRAM_TOKEN],
   },
   async (req, res) => {
     if (req.method === "GET") {
@@ -16,6 +35,23 @@ exports.webhook = onRequest(
 
     try {
       const update = req.body;
+
+      // 1. Обработка callback_query (inline-кнопки)
+      if (update.callback_query) {
+        const chatId = update.callback_query.message.chat.id;
+        const callbackData = update.callback_query.data;
+        const from = update.callback_query.from;
+
+        await routeCallback(chatId, callbackData, {
+          callbackQueryId: update.callback_query.id,
+          from: from,
+        });
+
+        res.sendStatus(200);
+        return;
+      }
+
+      // 2. Ранний выход для не-сообщений
       if (!update || !update.message || !update.message.text) {
         res.sendStatus(200);
         return;
@@ -24,7 +60,29 @@ exports.webhook = onRequest(
       const chatId = update.message.chat.id;
       const text = update.message.text;
 
-      // Echo the user's message back (will be replaced by router in Step 6)
+      // 3. Handle /start command
+      if (update.message.text === '/start') {
+        await languageDialog.askLanguage(chatId);
+        res.sendStatus(200);
+        return;
+      }
+
+      // 3.5: Route text messages based on onboarding state
+      if (_handleEditEddInput) {
+        try {
+          const user = await getUser(chatId);
+          if (user && user.onboardingState === 'awaiting_edd') {
+            await _handleEditEddInput(chatId, text);
+            res.sendStatus(200);
+            return;
+          }
+        } catch (_err) {
+          // Firestore read failed or handler threw — fall through to echo
+          console.warn('[webhook] onboardingState routing error:', _err.message);
+        }
+      }
+
+      // 4. Echo fallback for all other text messages
       await sendMessage(chatId, text);
 
       res.sendStatus(200);
@@ -41,7 +99,7 @@ async function registerWebhook(req, res) {
   const webhookUrl = `https://${req.headers.host}/webhook`;
 
   try {
-    const url = `${TELEGRAM_API}/bot${TELEGRAM_TOKEN}/setWebhook?url=${encodeURIComponent(webhookUrl)}`;
+    const url = `${TELEGRAM_API}/bot${getTelegramToken()}/setWebhook?url=${encodeURIComponent(webhookUrl)}`;
     const response = await fetch(url);
     const data = await response.json();
 

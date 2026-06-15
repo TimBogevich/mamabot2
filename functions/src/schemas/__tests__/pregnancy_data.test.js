@@ -31,6 +31,7 @@ function validDoc(overrides = {}) {
     vitaminRecommendations: "Фолиевая кислота 400 мкг/сутки",
     symptomsCommon: "Усталость, чувствительность груди, тошнота",
     babySize: "размером с маковое зёрнышко",
+  babyWeightGrams: 45,
     createdAt: null,
     updatedAt: null,
     ...overrides,
@@ -48,8 +49,8 @@ describe("PREGNANCY_DATA_COLLECTION", () => {
 });
 
 describe("PREGNANCY_DATA_FIELDS", () => {
-  it("should define all 10 fields", () => {
-    expect(Object.keys(PREGNANCY_DATA_FIELDS)).toHaveLength(10);
+  it("should define all 11 fields", () => {
+    expect(Object.keys(PREGNANCY_DATA_FIELDS)).toHaveLength(11);
   });
 
   it("should include weekNumber with number type and required", () => {
@@ -63,6 +64,13 @@ describe("PREGNANCY_DATA_FIELDS", () => {
     expect(f.type).toBe("string");
     expect(f.required).toBe(true);
   });
+
+  it("should include babyWeightGrams with number type and required", () => {
+    const f = PREGNANCY_DATA_FIELDS.babyWeightGrams;
+    expect(f.type).toBe("number");
+    expect(f.required).toBe(true);
+  });
+
 
   it("should include all content fields as required strings", () => {
     const contentFields = [
@@ -133,6 +141,34 @@ describe("validatePregnancyData() — valid documents", () => {
       true,
     );
   });
+
+  it("should accept a document with valid babyWeightGrams", () => {
+    const result = validatePregnancyData(validDoc({ babyWeightGrams: 45 }));
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it("should reject a document missing babyWeightGrams", () => {
+    const doc = validDoc();
+    delete doc.babyWeightGrams;
+    const result = validatePregnancyData(doc);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain(
+      'Missing required field: "babyWeightGrams"',
+    );
+  });
+
+  it("should accept babyWeightGrams = 1 (minimum boundary)", () => {
+    const result = validatePregnancyData(validDoc({ babyWeightGrams: 1 }));
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it("should accept babyWeightGrams = 5000 (maximum boundary)", () => {
+    const result = validatePregnancyData(validDoc({ babyWeightGrams: 5000 }));
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -149,6 +185,7 @@ describe("validatePregnancyData() — missing required fields", () => {
     "vitaminRecommendations",
     "symptomsCommon",
     "babySize",
+    "babyWeightGrams",
     "createdAt",
     "updatedAt",
   ];
@@ -167,7 +204,7 @@ describe("validatePregnancyData() — missing required fields", () => {
     const doc = { weekNumber: 1 };
     const result = validatePregnancyData(doc);
     expect(result.valid).toBe(false);
-    // Should report all 9 missing fields except weekNumber
+    // Should report all 10 missing fields except weekNumber
     expect(result.errors.length).toBeGreaterThanOrEqual(1);
   });
 
@@ -238,5 +275,35 @@ describe("validatePregnancyData() — invalid field values", () => {
     expect(result.errors).toContain(
       'Missing required field: "babyDevelopment"',
     );
+  });
+
+  it("should reject babyWeightGrams = 0 (must be > 0)", () => {
+    const result = validatePregnancyData(validDoc({ babyWeightGrams: 0 }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should reject babyWeightGrams = -1 (negative)", () => {
+    const result = validatePregnancyData(validDoc({ babyWeightGrams: -1 }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should reject babyWeightGrams = 5001 (exceeds max)", () => {
+    const result = validatePregnancyData(validDoc({ babyWeightGrams: 5001 }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should reject non-integer babyWeightGrams (1.5)", () => {
+    const result = validatePregnancyData(validDoc({ babyWeightGrams: 1.5 }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("should reject non-numeric babyWeightGrams ('45')", () => {
+    const result = validatePregnancyData(validDoc({ babyWeightGrams: "45" }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThanOrEqual(1);
   });
 });

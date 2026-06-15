@@ -1,3 +1,5 @@
 allowBuilds:
+  '@firebase/util': set this to true or false
   protobufjs: true
+  re2: set this to true or false
   unrs-resolver: true
