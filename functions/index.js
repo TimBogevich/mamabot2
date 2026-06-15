@@ -1,4 +1,5 @@
 const {onRequest} = require("firebase-functions/v2/https");
+const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {defineSecret} = require("firebase-functions/params");
 const {TELEGRAM_API, getTelegramToken, sendMessage} = require("./src/utils/telegram");
 const { routeCallback } = require('./src/handlers/router');
@@ -18,6 +19,18 @@ try {
 }
 
 const TELEGRAM_TOKEN = defineSecret("TELEGRAM_TOKEN");
+
+// ---------------------------------------------------------------------------
+// Graceful degradation — sendWeeklyNotifications handler may not be ready
+// ---------------------------------------------------------------------------
+
+/** @type {(() => Promise<{checked: number, notified: number}>)|null} */
+let _sendWeeklyNotifications = null;
+try {
+  _sendWeeklyNotifications = require('./src/handlers/notifications/sendWeekly').sendWeeklyNotifications;
+} catch (_err) {
+  // FN-020 handler not yet available — scheduled function will log a warning
+}
 
 exports.webhook = onRequest(
   {
@@ -94,6 +107,31 @@ exports.webhook = onRequest(
 );
 
 
+
+// ---------------------------------------------------------------------------
+// Scheduled: weekly notification check
+// ---------------------------------------------------------------------------
+
+exports.sendWeeklyNotifications = onSchedule(
+  {
+    schedule: 'every day 09:00',
+    timeZone: 'Europe/Moscow',
+  },
+  async (_event) => {
+    if (!_sendWeeklyNotifications) {
+      console.warn('[sendWeeklyNotifications] Handler not loaded — skipping run');
+      return;
+    }
+
+    try {
+      const result = await _sendWeeklyNotifications();
+      console.log('[sendWeeklyNotifications] Completed:', JSON.stringify(result));
+      return result;
+    } catch (err) {
+      console.error('[sendWeeklyNotifications] Error:', err.message);
+    }
+  },
+);
 
 async function registerWebhook(req, res) {
   const webhookUrl = `https://${req.headers.host}/webhook`;

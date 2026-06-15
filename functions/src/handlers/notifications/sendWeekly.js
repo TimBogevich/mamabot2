@@ -30,14 +30,14 @@ async function sendWeeklyNotifications() {
     const user = doc.data();
     checked++;
 
-    const { week, outOfRange } = calculatePregnancyWeek(user.lmpDate);
+    const { week: _week, outOfRange } = calculatePregnancyWeek(user.lmpDate);
 
     if (outOfRange) {
       return;
     }
 
     // -----------------------------------------------------------------------
-    // TODO (FN-021): Check week > (lastNotifiedWeek || 0) — skip if false
+    // TODO (FN-021): Check _week > (lastNotifiedWeek || 0) — skip if false
     // TODO (FN-022): Fetch pregnancy data, format message, call sendMessage
     // TODO (FN-021): Update lastNotifiedWeek via updateUser
     // -----------------------------------------------------------------------
