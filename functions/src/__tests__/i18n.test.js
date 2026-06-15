@@ -170,6 +170,71 @@ describe('t() — variable interpolation', function () {
     var result = await t('12345', 'onboarding.welcome', {});
     expect(result).toContain('{{name}}');
   });
+
+  it('replaces {{edd}} in onboarding.edd_calculated', async function () {
+    mockGetUser.mockResolvedValue(freshUser({ language: 'ru' }));
+    var result = await t('12345', 'onboarding.edd_calculated', { edd: '20.12.2026' });
+    expect(result).toContain('20.12.2026');
+    expect(result).not.toContain('{{edd}}');
+  });
+
+  it('replaces {{edd}} in onboarding.edd_saved', async function () {
+    mockGetUser.mockResolvedValue(freshUser({ language: 'ru' }));
+    var result = await t('12345', 'onboarding.edd_saved', { edd: '25.12.2026' });
+    expect(result).toContain('25.12.2026');
+    expect(result).not.toContain('{{edd}}');
+  });
+
+  it('replaces {{lmp}} in onboarding.edd_before_lmp', async function () {
+    mockGetUser.mockResolvedValue(freshUser({ language: 'ru' }));
+    var result = await t('12345', 'onboarding.edd_before_lmp', { lmp: '15.03.2026' });
+    expect(result).toContain('15.03.2026');
+    expect(result).not.toContain('{{lmp}}');
+  });
+
+  it('resolves onboarding.edd_confirm_btn to a non-empty string', async function () {
+    mockGetUser.mockResolvedValue(freshUser({ language: 'ru' }));
+    var result = await t('12345', 'onboarding.edd_confirm_btn');
+    expect(typeof result).toBe('string');
+    expect(result.length).toBeGreaterThan(0);
+    expect(result).not.toBe('onboarding.edd_confirm_btn');
+  });
+
+  it('resolves all new edd keys in Russian without fallback', async function () {
+    mockGetUser.mockResolvedValue(freshUser({ language: 'ru' }));
+    var keys = [
+      'onboarding.edd_calculated',
+      'onboarding.edd_confirm_btn',
+      'onboarding.edd_edit_btn',
+      'onboarding.ask_edd',
+      'onboarding.edd_invalid',
+      'onboarding.edd_too_far',
+    ];
+    for (var i = 0; i < keys.length; i++) {
+      var result = await t('12345', keys[i]);
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+      expect(result).not.toBe(keys[i]); // no key-as-fallback
+    }
+  });
+
+  it('resolves all new edd keys in English without fallback', async function () {
+    mockGetUser.mockResolvedValue(freshUser({ language: 'en' }));
+    var keys = [
+      'onboarding.edd_calculated',
+      'onboarding.edd_confirm_btn',
+      'onboarding.edd_edit_btn',
+      'onboarding.ask_edd',
+      'onboarding.edd_invalid',
+      'onboarding.edd_too_far',
+    ];
+    for (var i = 0; i < keys.length; i++) {
+      var result = await t('12345', keys[i]);
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+      expect(result).not.toBe(keys[i]); // no key-as-fallback
+    }
+  });
 });
 
 describe('setLanguage() — language switching', function () {
