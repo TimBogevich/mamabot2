@@ -9,12 +9,6 @@
     "invalid_lmp": "❌ Invalid date format. Please enter the date in YYYY-MM-DD format.",
     "lmp_confirmed": "✅ Date saved: {date}",
     "week_calculated": "🤰 You are {week} weeks pregnant!",
-    "edd_confirmed": "✅ EDD {{edd}} saved! You've successfully completed setup.",
-    "edd_prompt": "📅 Enter the estimated due date in DD.MM.YYYY format:",
-    "edd_invalid_format": "❌ Invalid date format. Please enter the date in DD.MM.YYYY format.",
-    "edd_before_lmp": "❌ Due date cannot be before the last menstrual period ({{lmp}}). Please enter a valid date.",
-    "edd_too_late": "❌ Due date is too far from the last menstrual period (maximum 300 days). Please enter a valid date.",
-    "edd_saved": "✅ EDD {{edd}} saved! You've successfully completed setup.",
     "already_registered": "👋 You are already registered! Use the menu to navigate."
   },
   "menu": {
