@@ -101,10 +101,16 @@ const doc = await db.collection("pregnancy_data").doc(docId).get();
    ботом — когда пользователь нажимает кнопку выбора языка в диалоге онбординга
    (`functions/src/handlers/onboarding/languageDialog.js`).
 2. **Обновление:** Поле `language` может быть обновлено через `setLanguage()`
-   (i18n-модуль) или через меню настроек.
-3. **Другие поля** (`lmpDate`, `currentWeek`) заполняются обработчиком
+   (i18n-модуль) или через меню настроек (`settings.change_language` в
+   `functions/src/handlers/settings/settingsMenu.js`).
+3. **Заполнение LMP:** Поля `lmpDate` и `currentWeek` заполняются обработчиком
    `functions/src/handlers/onboarding/lmpDialog.js` после успешного ввода и проверки
    даты последней менструации. Поле `partnerCode` заполняется последующими шагами онбординга.
+4. **Сброс данных:** Через подменю настроек (`settings.reset_data` →
+   `settings_confirm_reset` в `functions/src/handlers/settings/settingsMenu.js`)
+   поля `lmpDate` и `currentWeek` сбрасываются в `null`,
+   а также удаляются все записи пользователя из коллекций `mood_logs` и
+   `nutrition_logs`. Профильные данные (`language`, `firstName`, `role`) сохраняются.
 
 ### Использование в боте
 
@@ -353,6 +359,7 @@ if (!result.valid) {
   - `functions/src/handlers/router.js` — центральный callback-роутер (диспетчеризация по префиксам: `menu_*`, `onboarding_*`, `settings_*`, `week_*`, `mood_*`, `nutrition_*`)
 
   - `functions/src/handlers/menu/mainMenu.js` — рендеринг главного меню (4 кнопки в 2 ряда, локализованные подписи)
+  - `functions/src/handlers/settings/settingsMenu.js` — подменю настроек: смена языка, просмотр LMP, сброс данных с подтверждением (FN-029)
 
 ---
 

@@ -47,6 +47,18 @@ try {
   // FN-007 ещё не смержен — onboarding_edit_edd будет обработан как not-implemented
 }
 
+/** @type {((chatId: number|string, callbackData: string) => Promise<Object>)|null} */
+let _handleSettingsCallback = null;
+/** @type {((chatId: number|string) => Promise<Object>)|null} */
+let _showSettingsMenu = null;
+try {
+  const settingsModule = require('./settings/settingsMenu');
+  _handleSettingsCallback = settingsModule.handleSettingsCallback;
+  _showSettingsMenu = settingsModule.showSettingsMenu;
+} catch (_err) {
+  // FN-029 ещё не смержен — settings_* обрабатываются как not-implemented
+}
+
 // ---------------------------------------------------------------------------
 // Внутренние ссылки на зависимости (мутабельные для тестирования)
 // ---------------------------------------------------------------------------
@@ -158,15 +170,37 @@ async function handleOnboarding(chatId, callbackData, context) {
 
 /**
  * Обработчик домена 'menu'.
- * Пока все menu_* callback'и — placeholder (подменю ещё не реализованы).
+ * Диспатчит menu_settings → showSettingsMenu (FN-029).
+ * Остальные menu_* callback'и пока — placeholder (подменю ещё не реализованы).
  *
  * @param {number|string} chatId - Telegram chat ID
  * @param {string} callbackData - The callback_data string
  * @returns {Promise<Object>} Result object
  */
 async function handleMenu(chatId, callbackData) {
+  // Специальная обработка: menu_settings → открыть подменю настроек
+  if (callbackData === 'menu_settings' && _showSettingsMenu) {
+    return _showSettingsMenu(chatId);
+  }
+
   // В будущем: диспатч по полному callback_data (menu_my_week, menu_mood_diary, ...)
-  // Пока — возвращаем not-implemented
+  return handleNotImplemented(chatId, callbackData);
+}
+
+/**
+ * Обработчик домена 'settings'.
+ * Делегирует все settings_* callback'и в handleSettingsCallback (FN-029).
+ * Если FN-029 не смержен — вызывает handleNotImplemented.
+ *
+ * @param {number|string} chatId - Telegram chat ID
+ * @param {string} callbackData - The callback_data string
+ * @returns {Promise<Object>} Result object
+ */
+async function handleSettingsRoute(chatId, callbackData) {
+  if (_handleSettingsCallback) {
+    return _handleSettingsCallback(chatId, callbackData);
+  }
+
   return handleNotImplemented(chatId, callbackData);
 }
 
@@ -239,6 +273,7 @@ async function routeCallback(chatId, callbackData, context) {
     case 'menu':
       return handleMenu(chatId, callbackData);
     case 'settings':
+      return handleSettingsRoute(chatId, callbackData);
     case 'week':
     case 'mood':
     case 'nutrition':
@@ -282,6 +317,8 @@ async function handleUnknownCallback(chatId) {
  * @param {Function|null} [deps.showMainMenu] - Mock showMainMenu (or null to simulate FN-027 missing)
  * @param {Function|null} [deps.handleLanguageChoice] - Mock handleLanguageChoice (or null to simulate FN-024 missing)
  * @param {Function|null} [deps.handleConfirmEdd] - Mock handleConfirmEdd (or null to simulate FN-006 missing)
+ * @param {Function|null} [deps.handleSettingsCallback] - Mock handleSettingsCallback (or null to simulate FN-029 missing)
+ * @param {Function|null} [deps.showSettingsMenu] - Mock showSettingsMenu (or null to simulate FN-029 missing)
  * @returns {void}
  *
  * @example
@@ -298,6 +335,8 @@ function __inject(deps) {
   if (deps.handleLanguageChoice !== undefined) _handleLanguageChoice = deps.handleLanguageChoice;
   if (deps.handleConfirmEdd !== undefined) _handleConfirmEdd = deps.handleConfirmEdd;
   if (deps.handleEditEdd !== undefined) _handleEditEdd = deps.handleEditEdd;
+  if (deps.handleSettingsCallback !== undefined) _handleSettingsCallback = deps.handleSettingsCallback;
+  if (deps.showSettingsMenu !== undefined) _showSettingsMenu = deps.showSettingsMenu;
 }
 
 module.exports = { routeCallback, __inject };

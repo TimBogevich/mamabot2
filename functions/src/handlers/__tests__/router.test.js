@@ -2,8 +2,9 @@
  * @fileoverview Tests for the central callback router (router.js).
  *
  * Uses the __inject() testability hook to inject mock t(), sendMessage(),
- * answerCallbackQuery(), showMainMenu() and handleLanguageChoice()
- * implementations, following the same pattern as mainMenu.test.js.
+ * answerCallbackQuery(), showMainMenu(), handleLanguageChoice(),
+ * handleSettingsCallback() and showSettingsMenu() implementations,
+ * following the same pattern as mainMenu.test.js.
  *
  * @module router.test
  */
@@ -48,6 +49,8 @@ __inject({
   handleLanguageChoice: mockHandleLanguageChoice,
   handleConfirmEdd: mockHandleConfirmEdd,
   handleEditEdd: mockHandleEditEdd,
+  handleSettingsCallback: null,
+  showSettingsMenu: null,
 });
 
 // ---------------------------------------------------------------------------
@@ -80,6 +83,8 @@ function restoreInjectDefaults() {
     handleLanguageChoice: mockHandleLanguageChoice,
     handleConfirmEdd: mockHandleConfirmEdd,
     handleEditEdd: mockHandleEditEdd,
+    handleSettingsCallback: null,
+    showSettingsMenu: null,
   });
 }
 

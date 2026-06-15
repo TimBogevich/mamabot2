@@ -42,11 +42,20 @@
     "change_language": "🌍 Change Language",
     "view_lmp": "📅 My LMP Date",
     "reset_data": "🗑️ Reset All Data",
-    "reset_confirm": "⚠️ Are you sure? All data will be permanently deleted and cannot be recovered."
+    "reset_confirm": "⚠️ Are you sure? All data will be permanently deleted and cannot be recovered.",
+    "language_changed": "✅ Language changed to English.",
+    "lmp_date_display": "📅 Last menstrual period date: {{date}}",
+    "lmp_not_set": "📅 Last menstrual period date has not been set yet. Please complete onboarding: /start",
+    "reset_yes": "✅ Yes, reset",
+    "reset_no": "❌ No, cancel",
+    "data_reset_done": "♻️ All data has been reset. Please restart onboarding: /start"
   },
   "error": {
     "unknown_callback": "❌ Unknown command. Please use the menu.",
     "generic": "❌ An error occurred. Please try again later.",
     "session_expired": "⏰ Session expired. Please start again: /start"
+  },
+  "notifications": {
+    "new_week_full": "🤰 Week {{week}}\n\n⚖️ Weight: {{weight}} g\n📏 Size: {{size}}\n\n📝 {{development}}"
   }
 }
