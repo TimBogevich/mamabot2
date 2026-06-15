@@ -1,5 +1,6 @@
 const {onRequest} = require("firebase-functions/v2/https");
 const {TELEGRAM_API, TELEGRAM_TOKEN, sendMessage} = require("./src/utils/telegram");
+const languageDialog = require("./src/handlers/onboarding/languageDialog");
 
 exports.webhook = onRequest(
   {
@@ -16,7 +17,29 @@ exports.webhook = onRequest(
 
     try {
       const update = req.body;
-      if (!update || !update.message || !update.message.text) {
+
+      // 1. Handle callback queries (inline button presses)
+      if (update.callback_query) {
+        const chatId = update.callback_query.message.chat.id;
+        const data = update.callback_query.data;
+        const from = update.callback_query.from;
+
+        if (data === 'lang_ru' || data === 'lang_en') {
+          const userInfo = {
+            userId: String(from.id),
+            firstName: from.first_name || '',
+            lastName: from.last_name || '',
+            username: from.username || '',
+          };
+          await languageDialog.handleLanguageChoice(chatId, data, userInfo);
+        }
+
+        res.sendStatus(200);
+        return;
+      }
+
+      // 2. Early return for non-message updates
+      if (!update.message || !update.message.text) {
         res.sendStatus(200);
         return;
       }
@@ -24,7 +47,14 @@ exports.webhook = onRequest(
       const chatId = update.message.chat.id;
       const text = update.message.text;
 
-      // Echo the user's message back (will be replaced by router in Step 6)
+      // 3. Handle /start command
+      if (update.message.text === '/start') {
+        await languageDialog.askLanguage(chatId);
+        res.sendStatus(200);
+        return;
+      }
+
+      // 4. Echo fallback for all other text messages
       await sendMessage(chatId, text);
 
       res.sendStatus(200);

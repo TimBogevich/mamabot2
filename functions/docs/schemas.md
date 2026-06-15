@@ -71,10 +71,58 @@ const doc = await db.collection("pregnancy_data").doc(docId).get();
 
 ---
 
-## 2. Коллекция `users` (планируется — FN-001)
+## 2. Коллекция `users`
 
-> Базовая схема будет описана после выполнения задачи FN-001.
-> Предполагаемые поля: `userId`, `telegramId`, `language`, `pregnancyWeek`, `createdAt`.
+Хранит профили пользователей бота. Каждый документ соответствует одному
+пользователю Telegram. ID документа — `String(chatId)`.
+
+### Поля документа
+
+| Поле         | Тип                   | Обязательное | Nullable | Описание                                        |
+|--------------|-----------------------|:------------:|:--------:|-------------------------------------------------|
+| `chatId`     | `number`              |      ✅      |    ❌    | Telegram chat ID (также ID документа)            |
+| `userId`     | `string`              |      ✅      |    ❌    | Telegram user ID (из `from.id`)                  |
+| `firstName`  | `string`              |      ✅      |    ❌    | Имя пользователя Telegram                        |
+| `lastName`   | `string`              |      ❌      |    ❌    | Фамилия пользователя Telegram                    |
+| `username`   | `string`              |      ❌      |    ❌    | @username в Telegram                             |
+| `language`   | `'ru'\|'en'`          |      ✅      |    ❌    | Выбранный язык (заполняется при онбординге)      |
+| `lmpDate`    | `string` (ISO 8601)   |      ❌      |    ❌    | Дата первого дня последней менструации           |
+| `currentWeek`| `number` (integer)    |      ❌      |    ❌    | Текущая неделя беременности (1–42)               |
+| `partnerCode`| `string`              |      ❌      |    ❌    | 6-символьный код для приглашения партнёра        |
+| `role`       | `'mom'\|'partner'`    |      ✅      |    ❌    | Роль пользователя                                |
+| `createdAt`  | `Timestamp`           |      ✅      |    ✅    | Время создания (Firestore serverTimestamp)       |
+| `updatedAt`  | `Timestamp`           |      ✅      |    ✅    | Время последнего обновления (serverTimestamp)    |
+
+### Жизненный цикл документа
+
+1. **Создание:** Документ создаётся при первом взаимодействии пользователя с
+   ботом — когда пользователь нажимает кнопку выбора языка в диалоге онбординга
+   (`functions/src/handlers/onboarding/languageDialog.js`).
+2. **Обновление:** Поле `language` может быть обновлено через `setLanguage()`
+   (i18n-модуль) или через меню настроек.
+3. **Другие поля** (`lmpDate`, `currentWeek`, `partnerCode`) заполняются
+   последующими шагами онбординга.
+
+### Пример документа (JSON)
+
+```json
+{
+  "chatId": 123456789,
+  "userId": "123456789",
+  "firstName": "Анна",
+  "lastName": "Иванова",
+  "username": "anna_i",
+  "language": "ru",
+  "role": "mom",
+  "createdAt": "<server timestamp>",
+  "updatedAt": "<server timestamp>"
+}
+```
+
+### Исходный код
+
+- `functions/src/collections/users.js` — CRUD-хелперы (`createUser`, `getUser`, `updateUser`)
+- `functions/src/firestore.js` — инициализация Firestore клиента
 
 ---
 
@@ -295,3 +343,12 @@ if (!result.valid) {
 - **Fallback:** язык пользователя → русский → сырой ключ.
 
 Подробная документация: [`docs/i18n.md`](./i18n.md).
+
+### Ключи онбординга
+
+| Ключ                    | Описание                                                     | Плейсхолдеры |
+|-------------------------|--------------------------------------------------------------|-------------|
+| `onboarding.language_ru`| Текст кнопки «🇷🇺 Русский» (одинаков в обоих locale-файлах)   | —           |
+| `onboarding.language_en`| Текст кнопки «🇬🇧 English» (одинаков в обоих locale-файлах)   | —           |
+| `onboarding.language_saved` | Подтверждение выбора языка                               | `{{lang}}`  |
+| `onboarding.already_registered` | Сообщение для повторного /start                       | —           |
