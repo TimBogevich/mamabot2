@@ -106,4 +106,61 @@ async function answerCallbackQuery(callbackQueryId, options = {}) {
   }
 }
 
-module.exports = { TELEGRAM_API, getTelegramToken, sendMessage, answerCallbackQuery };
+/**
+ * Register bot commands for the slash menu.
+ *
+ * Call this after setWebhook to populate the command list shown when users type `/`.
+ *
+ * @param {Array<{command: string, description: string}>} commands - Array of command objects
+ * @param {Object} [options] - Optional parameters
+ * @param {string} [options.scope] - BotCommandScope for filtering
+ * @param {string} [options.language_code] - ISO 639-1 language code for localized commands
+ * @returns {Promise<Object>} The Telegram API response JSON
+ * @see https://core.telegram.org/bots/api#setmycommands
+ */
+async function setMyCommands(commands, options = {}) {
+  const url = `${TELEGRAM_API}/bot${getTelegramToken()}/setMyCommands`;
+  const body = { commands, ...options };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Telegram API setMyCommands error: ${response.status} ${err}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Delete all registered bot commands.
+ *
+ * @param {Object} [options] - Optional parameters
+ * @param {string} [options.scope] - BotCommandScope for filtering
+ * @param {string} [options.language_code] - ISO 639-1 language code
+ * @returns {Promise<Object>} The Telegram API response JSON
+ * @see https://core.telegram.org/bots/api#deletemycommands
+ */
+async function deleteMyCommands(options = {}) {
+  const url = `${TELEGRAM_API}/bot${getTelegramToken()}/deleteMyCommands`;
+  const body = { ...options };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Telegram API deleteMyCommands error: ${response.status} ${err}`);
+  }
+
+  return response.json();
+}
+
+module.exports = { TELEGRAM_API, getTelegramToken, sendMessage, answerCallbackQuery, setMyCommands, deleteMyCommands };

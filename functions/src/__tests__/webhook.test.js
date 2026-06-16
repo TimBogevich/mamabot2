@@ -142,10 +142,15 @@ describe("registerWebhook", () => {
   });
 
   it("constructs the correct Telegram API URL with the config-resolved token", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ ok: true, description: "Webhook was set" }),
-    });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true, description: "Webhook was set" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ ok: true }),
+      });
     globalThis.fetch = fetchMock;
 
     const registerWebhook = loadRegisterWebhook();
@@ -154,13 +159,12 @@ describe("registerWebhook", () => {
 
     await registerWebhook(req, res);
 
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const calledUrl = fetchMock.mock.calls[0][0];
-    expect(calledUrl).toBe(
+    const setWebhookUrl = fetchMock.mock.calls[0][0];
+    expect(setWebhookUrl).toBe(
       `${TELEGRAM_API_URL}/bot${TEST_TOKEN}/setWebhook?url=${encodeURIComponent(EXPECTED_WEBHOOK_URL)}`
     );
     // Confirm the token is NOT a hardcoded value
-    expect(calledUrl).not.toContain("8780361867");
+    expect(setWebhookUrl).not.toContain("8780361867");
   });
 
   it("derives webhook URL from the request host header", async () => {
@@ -264,5 +268,85 @@ describe("registerWebhook", () => {
       description: "Webhook was set",
       webhookUrl: EXPECTED_WEBHOOK_URL,
     });
+  });
+
+  it("calls setMyCommands after successful setWebhook", async () => {
+    const fetchMock = vi.fn();
+    // First call: setWebhook
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true, description: "Webhook was set" }),
+    });
+    // Second call: setMyCommands
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true }),
+    });
+    globalThis.fetch = fetchMock;
+
+    const registerWebhook = loadRegisterWebhook();
+    const req = mockReq(TEST_HOST);
+    const res = mockRes();
+
+    await registerWebhook(req, res);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    // First call: setWebhook
+    expect(fetchMock.mock.calls[0][0]).toContain('/setWebhook');
+
+    // Second call: setMyCommands
+    const [cmdUrl, cmdOpts] = fetchMock.mock.calls[1];
+    expect(cmdUrl).toBe(`${TELEGRAM_API_URL}/bot${TEST_TOKEN}/setMyCommands`);
+    const cmdBody = JSON.parse(cmdOpts.body);
+    expect(cmdBody.commands).toHaveLength(4);
+    expect(cmdBody.commands[0]).toEqual({ command: 'start', description: '🚀 Start the bot / Начать' });
+  });
+
+  it("does not call setMyCommands when setWebhook fails", async () => {
+    const fetchMock = vi.fn();
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ ok: false, description: "Bad Request" }),
+    });
+    globalThis.fetch = fetchMock;
+
+    const registerWebhook = loadRegisterWebhook();
+    const req = mockReq(TEST_HOST);
+    const res = mockRes();
+
+    await registerWebhook(req, res);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toContain('/setWebhook');
+  });
+
+  it("returns success even when setMyCommands fails (non-blocking)", async () => {
+    const fetchMock = vi.fn();
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ ok: true, description: "Webhook was set" }),
+    });
+    // setMyCommands fails
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    fetchMock.mockRejectedValueOnce(new Error("setMyCommands failed"));
+    globalThis.fetch = fetchMock;
+
+    const registerWebhook = loadRegisterWebhook();
+    const req = mockReq(TEST_HOST);
+    const res = mockRes();
+
+    await registerWebhook(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      description: "Webhook was set",
+      webhookUrl: EXPECTED_WEBHOOK_URL,
+    });
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      '[webhook] setMyCommands failed:',
+      expect.stringContaining('setMyCommands failed'),
+    );
+    consoleWarnSpy.mockRestore();
   });
 });

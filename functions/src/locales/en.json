@@ -52,10 +52,20 @@
   },
   "error": {
     "unknown_callback": "❌ Unknown command. Please use the menu.",
+    "unknown_command": "❌ Unknown command. Use /help for the list of available commands.",
     "generic": "❌ An error occurred. Please try again later.",
     "session_expired": "⏰ Session expired. Please start again: /start"
   },
   "notifications": {
     "new_week_full": "🤰 Week {{week}}\n\n⚖️ Weight: {{weight}} g\n📏 Size: {{size}}\n\n📝 {{development}}"
+  },
+  "commands": {
+    "start": "🚀 Start the bot",
+    "help": "ℹ️ Show help",
+    "menu": "📋 Show main menu",
+    "settings": "⚙️ Open settings"
+  },
+  "help": {
+    "message": "🤰 MamaBot — your pregnancy assistant!\n\nAvailable commands:\n/start — begin setup\n/menu — main menu\n/settings — settings\n/help — this help\n\nUse the menu buttons to navigate."
   }
 }

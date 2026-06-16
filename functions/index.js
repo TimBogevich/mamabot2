@@ -1,7 +1,7 @@
 const {onRequest} = require("firebase-functions/v2/https");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 const {defineSecret} = require("firebase-functions/params");
-const {TELEGRAM_API, getTelegramToken, sendMessage} = require("./src/utils/telegram");
+const {TELEGRAM_API, getTelegramToken, sendMessage, setMyCommands} = require("./src/utils/telegram");
 const { routeCallback } = require('./src/handlers/router');
 const languageDialog = require("./src/handlers/onboarding/languageDialog");
 const { getUser } = require('./src/collections/users');
@@ -17,6 +17,24 @@ try {
 } catch (_err) {
   // FN-007 ещё не смержен — текстовый ввод ПДР будет обработан как echo
 }
+
+/** @type {((chatId: number|string) => Promise<Object>)|null} */
+let _showMainMenu = null;
+try {
+  _showMainMenu = require('./src/handlers/menu/mainMenu').showMainMenu;
+} catch (_err) {
+  // showMainMenu not available — /menu command will fall back to echo
+}
+
+/** @type {((chatId: number|string) => Promise<Object>)|null} */
+let _showSettingsMenu = null;
+try {
+  _showSettingsMenu = require('./src/handlers/settings/settingsMenu').showSettingsMenu;
+} catch (_err) {
+  // showSettingsMenu not available — /settings command will fall back to echo
+}
+
+const { t } = require('./src/i18n');
 
 const TELEGRAM_TOKEN = defineSecret("TELEGRAM_TOKEN");
 
@@ -95,8 +113,42 @@ exports.webhook = onRequest(
         }
       }
 
-      // 4. Echo fallback for all other text messages
-      await sendMessage(chatId, text);
+      // 4. Handle text commands
+      if (text === '/help') {
+        const helpText = await t(chatId, 'help.message');
+        await sendMessage(chatId, helpText);
+        res.sendStatus(200);
+        return;
+      }
+
+      if (text === '/menu') {
+        if (_showMainMenu) {
+          await _showMainMenu(chatId);
+        } else {
+          await sendMessage(chatId, await t(chatId, 'error.generic'));
+        }
+        res.sendStatus(200);
+        return;
+      }
+
+      if (text === '/settings') {
+        if (_showSettingsMenu) {
+          await _showSettingsMenu(chatId);
+        } else {
+          await sendMessage(chatId, await t(chatId, 'error.generic'));
+        }
+        res.sendStatus(200);
+        return;
+      }
+
+      // 5. Fallback for unrecognized commands — suggest /help
+      if (text.startsWith('/')) {
+        const unknownCmdText = await t(chatId, 'error.unknown_command');
+        await sendMessage(chatId, unknownCmdText);
+      } else {
+        // Echo fallback for plain text (should not normally be reached)
+        await sendMessage(chatId, text);
+      }
 
       res.sendStatus(200);
     } catch (err) {
@@ -137,9 +189,23 @@ async function registerWebhook(req, res) {
   const webhookUrl = `https://${req.headers.host}/webhook`;
 
   try {
-    const url = `${TELEGRAM_API}/bot${getTelegramToken()}/setWebhook?url=${encodeURIComponent(webhookUrl)}`;
-    const response = await fetch(url);
+    const setWebhookUrl = `${TELEGRAM_API}/bot${getTelegramToken()}/setWebhook?url=${encodeURIComponent(webhookUrl)}`;
+    const response = await fetch(setWebhookUrl);
     const data = await response.json();
+
+    if (data.ok) {
+      try {
+        const defaultCommands = [
+          { command: 'start', description: '🚀 Start the bot / Начать' },
+          { command: 'help', description: 'ℹ️ Help / Справка' },
+          { command: 'menu', description: '📋 Main menu / Главное меню' },
+          { command: 'settings', description: '⚙️ Settings / Настройки' },
+        ];
+        await setMyCommands(defaultCommands);
+      } catch (cmdErr) {
+        console.warn('[webhook] setMyCommands failed:', cmdErr.message);
+      }
+    }
 
     res.json({success: data.ok, description: data.description, webhookUrl});
   } catch (err) {
