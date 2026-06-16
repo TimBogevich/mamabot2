@@ -22,6 +22,7 @@ const DEFAULT_T_VALUES = {
   'menu.nutrition': 'Питание',
   'menu.invite_partner': 'Пригласить партнёра',
   'menu.settings': 'Настройки',
+  'menu.help': 'Помощь',
 };
 
 function setupDefaultMockT() {
@@ -42,9 +43,9 @@ describe('showMainMenu', () => {
   });
 
   describe('t() calls', () => {
-    it('вызывает _t ровно 6 раз: заголовок + 5 подписей кнопок', async () => {
+    it('вызывает _t ровно 7 раз: заголовок + 6 подписей кнопок', async () => {
       await showMainMenu(CHAT_ID);
-      expect(mockT).toHaveBeenCalledTimes(6);
+      expect(mockT).toHaveBeenCalledTimes(7);
     });
 
     it('все вызовы _t используют правильный chatId и ключи', async () => {
@@ -55,6 +56,7 @@ describe('showMainMenu', () => {
       expect(mockT).toHaveBeenNthCalledWith(4, CHAT_ID, 'menu.nutrition');
       expect(mockT).toHaveBeenNthCalledWith(5, CHAT_ID, 'menu.invite_partner');
       expect(mockT).toHaveBeenNthCalledWith(6, CHAT_ID, 'menu.settings');
+      expect(mockT).toHaveBeenNthCalledWith(7, CHAT_ID, 'menu.help');
     });
 
     it('порядок вызовов _t: заголовок, затем кнопки', async () => {
@@ -71,6 +73,7 @@ describe('showMainMenu', () => {
         'menu.nutrition',
         'menu.invite_partner',
         'menu.settings',
+        'menu.help',
       ]);
     });
   });
@@ -88,10 +91,10 @@ describe('showMainMenu', () => {
       expect(options.reply_markup).toHaveProperty('inline_keyboard');
     });
 
-    it('inline_keyboard — массив из 3 строк (рядов)', async () => {
+    it('inline_keyboard — массив из 4 строк (рядов)', async () => {
       await showMainMenu(CHAT_ID);
       const { inline_keyboard } = mockSendMessage.mock.calls[0][2].reply_markup;
-      expect(inline_keyboard).toHaveLength(3);
+      expect(inline_keyboard).toHaveLength(4);
     });
 
     it('первый ряд содержит 2 кнопки: my_week и mood_diary', async () => {
@@ -115,6 +118,13 @@ describe('showMainMenu', () => {
       const { inline_keyboard } = mockSendMessage.mock.calls[0][2].reply_markup;
       expect(inline_keyboard[2]).toHaveLength(1);
       expect(inline_keyboard[2][0].callback_data).toBe('menu_settings');
+    });
+
+    it('четвёртый ряд содержит 1 кнопку: help', async () => {
+      await showMainMenu(CHAT_ID);
+      const { inline_keyboard } = mockSendMessage.mock.calls[0][2].reply_markup;
+      expect(inline_keyboard[3]).toHaveLength(1);
+      expect(inline_keyboard[3][0].callback_data).toBe('menu_help');
     });
   });
 
@@ -143,6 +153,11 @@ describe('showMainMenu', () => {
       await showMainMenu(CHAT_ID);
       const { inline_keyboard } = mockSendMessage.mock.calls[0][2].reply_markup;
       expect(inline_keyboard[2][0].callback_data).toBe('menu_settings');
+    });
+    it('menu_help', async () => {
+      await showMainMenu(CHAT_ID);
+      const { inline_keyboard } = mockSendMessage.mock.calls[0][2].reply_markup;
+      expect(inline_keyboard[3][0].callback_data).toBe('menu_help');
     });
   });
 

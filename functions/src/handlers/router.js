@@ -232,6 +232,13 @@ async function handleMenu(chatId, callbackData) {
     return _handlePartnerCallback(chatId, callbackData);
   }
 
+  if (callbackData === 'menu_help') {
+    const helpText = await _t(chatId, 'help.message');
+    await _sendMessage(chatId, helpText);
+    if (_showMainMenu) await _showMainMenu(chatId);
+    return { status: 'help_shown' };
+  }
+
   return handleNotImplemented(chatId, callbackData);
 }
 

@@ -10,6 +10,7 @@
  *   - «Питание»     → menu_nutrition
  *   - «Пригласить партнёра» → menu_invite_partner
  *   - «Настройки»   → menu_settings
+ *   - «Помощь»      → menu_help
  *
  * Используется на финальном шаге онбординга и при повторном /start после FN-024.
  *
@@ -50,8 +51,9 @@ async function _showMainMenuImpl(chatId) {
   const nutritionLabel = await _t(chatId, 'menu.nutrition');
   const invitePartnerLabel = await _t(chatId, 'menu.invite_partner');
   const settingsLabel = await _t(chatId, 'menu.settings');
+  const helpLabel = await _t(chatId, 'menu.help');
 
-  // Inline-клавиатура: 3 ряда
+  // Inline-клавиатура: 4 ряда
   const keyboard = {
     inline_keyboard: [
       [
@@ -64,6 +66,9 @@ async function _showMainMenuImpl(chatId) {
       ],
       [
         { text: settingsLabel, callback_data: 'menu_settings' },
+      ],
+      [
+        { text: helpLabel, callback_data: 'menu_help' },
       ],
     ],
   };

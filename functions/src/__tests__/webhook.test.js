@@ -299,8 +299,12 @@ describe('registerWebhook', () => {
     const [cmdUrl, cmdOpts] = fetchMock.mock.calls[1];
     expect(cmdUrl).toBe(`${TELEGRAM_API_URL}/bot${TEST_TOKEN}/setMyCommands`);
     const cmdBody = JSON.parse(cmdOpts.body);
-    expect(cmdBody.commands).toHaveLength(4);
+    expect(cmdBody.commands).toHaveLength(8);
     expect(cmdBody.commands[0]).toEqual({ command: 'start', description: '🚀 Start the bot / Начать' });
+    expect(cmdBody.commands[3]).toEqual({ command: 'week', description: '📅 My week / Моя неделя' });
+    expect(cmdBody.commands[4]).toEqual({ command: 'mood', description: '😊 Mood diary / Дневник настроения' });
+    expect(cmdBody.commands[5]).toEqual({ command: 'nutrition', description: '🍎 Nutrition / Питание' });
+    expect(cmdBody.commands[6]).toEqual({ command: 'invite', description: '👥 Invite partner / Пригласить партнёра' });
   });
 
   it('does not call setMyCommands when setWebhook fails', async () => {

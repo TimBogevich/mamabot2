@@ -50,6 +50,38 @@ try {
   // partner handler not available
 }
 
+/** @type {((chatId: number|string) => Promise<Object>)|null} */
+let _showWeekInfo = null;
+try {
+  _showWeekInfo = require('./src/handlers/week/weekMenu').showWeekInfo;
+} catch (_err) {
+  // not available
+}
+
+/** @type {((chatId: number|string) => Promise<Object>)|null} */
+let _showMoodMenu = null;
+try {
+  _showMoodMenu = require('./src/handlers/mood/moodMenu').showMoodMenu;
+} catch (_err) {
+  // not available
+}
+
+/** @type {((chatId: number|string) => Promise<Object>)|null} */
+let _showNutritionMenu = null;
+try {
+  _showNutritionMenu = require('./src/handlers/nutrition/nutritionMenu').showNutritionMenu;
+} catch (_err) {
+  // not available
+}
+
+/** @type {((chatId: number|string) => Promise<Object>)|null} */
+let _showPartnerMenu = null;
+try {
+  _showPartnerMenu = require('./src/handlers/partner/partnerMenu').showPartnerMenu;
+} catch (_err) {
+  // not available
+}
+
 const { t } = require('./src/i18n');
 
 const TELEGRAM_TOKEN = defineSecret('TELEGRAM_TOKEN');
@@ -185,6 +217,46 @@ exports.webhook = onRequest(
         return;
       }
 
+      if (text === '/week') {
+        if (_showWeekInfo) {
+          await _showWeekInfo(chatId);
+        } else {
+          await sendMessage(chatId, await t(chatId, 'error.generic'));
+        }
+        res.sendStatus(200);
+        return;
+      }
+
+      if (text === '/mood') {
+        if (_showMoodMenu) {
+          await _showMoodMenu(chatId);
+        } else {
+          await sendMessage(chatId, await t(chatId, 'error.generic'));
+        }
+        res.sendStatus(200);
+        return;
+      }
+
+      if (text === '/nutrition') {
+        if (_showNutritionMenu) {
+          await _showNutritionMenu(chatId);
+        } else {
+          await sendMessage(chatId, await t(chatId, 'error.generic'));
+        }
+        res.sendStatus(200);
+        return;
+      }
+
+      if (text === '/invite') {
+        if (_showPartnerMenu) {
+          await _showPartnerMenu(chatId);
+        } else {
+          await sendMessage(chatId, await t(chatId, 'error.generic'));
+        }
+        res.sendStatus(200);
+        return;
+      }
+
       // 5. Fallback for unrecognized input — suggest menu/help
       const fallbackText = await t(chatId, 'error.use_menu');
       await sendMessage(chatId, fallbackText);
@@ -238,6 +310,10 @@ async function registerWebhook(req, res) {
           { command: 'start', description: '🚀 Start the bot / Начать' },
           { command: 'help', description: 'ℹ️ Help / Справка' },
           { command: 'menu', description: '📋 Main menu / Главное меню' },
+          { command: 'week', description: '📅 My week / Моя неделя' },
+          { command: 'mood', description: '😊 Mood diary / Дневник настроения' },
+          { command: 'nutrition', description: '🍎 Nutrition / Питание' },
+          { command: 'invite', description: '👥 Invite partner / Пригласить партнёра' },
           { command: 'settings', description: '⚙️ Settings / Настройки' },
         ];
         await setMyCommands(defaultCommands);
