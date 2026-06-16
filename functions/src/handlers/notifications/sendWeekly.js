@@ -45,15 +45,19 @@ function __inject(deps) {
  * via Telegram. Errors for individual users are logged and do not crash
  * the entire batch.
  *
- * @returns {Promise<{ checked: number, notified: number }>}
+ * @returns {Promise<{ checked: number, notified: number, skipped: number, errors: number }>}
  *   `checked` — number of users with an LMP date
  *   `notified` — number of users who received a notification
+ *   `skipped` — number of users skipped (outOfRange, duplicate, or missing pregnancy data)
+ *   `errors` — number of users where notification send failed
  */
 async function sendWeeklyNotifications() {
   const snap = await _db.collection('users').where('lmpDate', '!=', null).get();
 
   let checked = 0;
   let notified = 0;
+  let skipped = 0;
+  let errors = 0;
 
   for (const doc of snap.docs) {
     const user = doc.data();
@@ -63,11 +67,13 @@ async function sendWeeklyNotifications() {
 
     // Skip users whose pregnancy is out of range (before week 1 or after week 42)
     if (outOfRange) {
+      skipped++;
       continue;
     }
 
     // Duplicate protection: skip if already notified for this week
     if (week <= (user.lastNotifiedWeek || 0)) {
+      skipped++;
       continue;
     }
 
@@ -82,6 +88,7 @@ async function sendWeeklyNotifications() {
 
       if (!pregnancySnap.exists) {
         console.warn(`[sendWeeklyNotifications] No pregnancy data for ${pregnancyDocId}, user ${user.chatId}`);
+        skipped++;
         continue;
       }
 
@@ -106,6 +113,7 @@ async function sendWeeklyNotifications() {
       notified++;
     } catch (err) {
       console.error(`[sendWeeklyNotifications] Failed to notify user ${user.chatId}:`, err.message);
+      errors++;
       // Continue to next user — failure for one should not crash the batch
     }
   }
@@ -113,7 +121,7 @@ async function sendWeeklyNotifications() {
   console.log(`[sendWeeklyNotifications] Checked ${checked} users with lmpDate`);
   console.log(`[sendWeeklyNotifications] Notified ${notified} users`);
 
-  return { checked, notified };
+  return { checked, notified, skipped, errors };
 }
 
 module.exports = { sendWeeklyNotifications, __inject };

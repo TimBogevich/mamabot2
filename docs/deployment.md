@@ -41,9 +41,9 @@ From the `functions/` directory, run:
 npm run deploy
 ```
 
-> **Note:** This deploys **only** Cloud Functions. Firestore security rules require a separate deployment step — see [Security Rules Deployment](#security-rules-deployment) below.
+> **Note:** This deploys both Cloud Functions **and** Firestore security rules. The `--only functions,firestore:rules` flag ensures both are deployed atomically in a single command.
 
-This executes `firebase deploy --only functions`, which deploys only the Cloud Functions defined in `functions/index.js`. The `--only functions` flag prevents accidental deployment of other Firebase products (Firestore rules, Hosting, etc.).
+This executes `firebase deploy --only functions,firestore:rules`, which deploys both Cloud Functions and Firestore security rules atomically. The `--only functions,firestore:rules` flag ensures both products are updated together while preventing accidental deployment of other Firebase products (Hosting, Storage, etc.).
 
 **Equivalent one-liner** (from repo root):
 
@@ -54,12 +54,12 @@ cd functions && npm run deploy
 **Direct command** (if not using npm scripts):
 
 ```bash
-firebase deploy --only functions
+firebase deploy --only functions,firestore:rules
 ```
 
 ### What gets deployed
 
-- **`firebase deploy --only functions`** (via `npm run deploy`) deploys only Cloud Functions
+- **`firebase deploy --only functions,firestore:rules`** (via `npm run deploy`) deploys both Cloud Functions and Firestore security rules
 - **`firebase deploy`** (full project deploy) deploys both Cloud Functions **and** Firestore security rules
 
 The Functions source directory is `functions/` as declared in [`firebase.json`](../firebase.json). The Functions deploy process:
@@ -87,7 +87,7 @@ The Functions source directory is `functions/` as declared in [`firebase.json`](
 
 - The `firestore.rules` file defines per-collection access policies (see [`docs/firestore-schema.md`](firestore-schema.md))
 - If the rules are not deployed, Firestore falls back to the default (or previously deployed) rules — which may be too permissive or too restrictive
-- The `npm run deploy` script deploys **only Functions**, not Firestore rules
+- The `npm run deploy` script now deploys both Functions **and** Firestore rules atomically
 
 ### Deploy Firestore rules only
 
@@ -111,10 +111,29 @@ This deploys both Cloud Functions and Firestore security rules in a single comma
 
 ### Recommended workflow
 
-1. Deploy functions: `cd functions && npm run deploy`
-2. Deploy Firestore rules: `firebase deploy --only firestore:rules`
+`npm run deploy` now deploys both Cloud Functions and Firestore security rules in a single command. The previous two-step workflow is no longer necessary, but individual `--only` flags are still documented below for selective deploys when needed.
 
-Or use a single full deploy from the repo root: `firebase deploy`
+**Recommended (single command):**
+
+```bash
+cd functions && npm run deploy
+```
+
+**Selective deploys** (if you need to deploy only one product):
+
+```bash
+# Deploy only Cloud Functions
+cd functions && firebase deploy --only functions
+
+# Deploy only Firestore rules
+firebase deploy --only firestore:rules
+```
+
+**Full project deploy** (from repo root):
+
+```bash
+firebase deploy
+```
 
 ---
 

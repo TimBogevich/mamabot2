@@ -10,7 +10,7 @@
     "test:rules:partners": "vitest run test/rules/firestore.rules.test.js --reporter=dot -t 'partners'",
     "seed:pregnancy-data": "node scripts/seed-pregnancy-data.js",
     "verify:users-schema": "node scripts/verify-users-schema.js",
-    "deploy": "firebase deploy --only functions"
+    "deploy": "firebase deploy --only functions,firestore:rules"
   },
   "engines": {
     "node": "20"

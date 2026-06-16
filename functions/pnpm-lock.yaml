@@ -11,6 +11,9 @@ importers:
       '@google-cloud/functions-framework':
         specifier: ^5.0.2
         version: 5.0.2
+      '@rolldown/pluginutils':
+        specifier: ^1.0.1
+        version: 1.0.1
       firebase-admin:
         specifier: ^12.0.0
         version: 12.7.0

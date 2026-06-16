@@ -256,7 +256,7 @@ describe('sendWeeklyNotifications', () => {
     const result = await mod.sendWeeklyNotifications();
 
     // Assert
-    expect(result).toEqual({ checked: 2, notified: 1 });
+    expect(result).toMatchObject({ checked: 2, notified: 1, skipped: 1, errors: 0 });
     expect(mockT).toHaveBeenCalled();
     expect(mockSendMessage).toHaveBeenCalledWith(1, 'formatted message');
   });
@@ -280,7 +280,7 @@ describe('sendWeeklyNotifications', () => {
     const result = await mod.sendWeeklyNotifications();
 
     // Assert
-    expect(result).toEqual({ checked: 0, notified: 0 });
+    expect(result).toMatchObject({ checked: 0, notified: 0, skipped: 0, errors: 0 });
   });
 
   it('handles all valid weeks correctly', async () => {
@@ -340,7 +340,7 @@ describe('sendWeeklyNotifications', () => {
     const result = await mod.sendWeeklyNotifications();
 
     // Assert
-    expect(result).toEqual({ checked: 3, notified: 3 });
+    expect(result).toMatchObject({ checked: 3, notified: 3, skipped: 0, errors: 0 });
     expect(mockSendMessage).toHaveBeenCalledTimes(3);
   });
 
@@ -370,7 +370,7 @@ describe('sendWeeklyNotifications', () => {
     const result = await mod.sendWeeklyNotifications();
 
     // Assert
-    expect(result).toEqual({ checked: 2, notified: 0 });
+    expect(result).toMatchObject({ checked: 2, notified: 0, skipped: 2, errors: 0 });
     expect(mockSendMessage).not.toHaveBeenCalled();
   });
 
@@ -605,7 +605,7 @@ describe('sendWeeklyNotifications', () => {
       // Only second user should be notified
       expect(mockSendMessage).toHaveBeenCalledTimes(1);
       expect(mockSendMessage).toHaveBeenCalledWith(222, 'formatted');
-      expect(result).toEqual({ checked: 2, notified: 1 });
+      expect(result).toMatchObject({ checked: 2, notified: 1, skipped: 1, errors: 0 });
     });
 
     it('error in sendMessage does not crash batch', async () => {
@@ -677,7 +677,7 @@ describe('sendWeeklyNotifications', () => {
       // Second user still gets notified
       expect(mockSendMessage).toHaveBeenCalledTimes(2);
       expect(mockSendMessage).toHaveBeenLastCalledWith(222, 'formatted');
-      expect(result).toEqual({ checked: 2, notified: 1 });
+      expect(result).toMatchObject({ checked: 2, notified: 1, skipped: 0, errors: 1 });
 
       consoleErrorSpy.mockRestore();
     });
@@ -741,6 +741,189 @@ describe('sendWeeklyNotifications', () => {
       expect(typeof vars.weight).toBe('string');
       expect(vars).toHaveProperty('size');
       expect(vars).toHaveProperty('development');
+    });
+  });
+
+  // -----------------------------------------------------------------------
+  // FN-038 message formation tests (additional coverage)
+  // -----------------------------------------------------------------------
+
+  describe('message formation (FN-038)', () => {
+    it('defaults to Russian doc for unsupported language value', async () => {
+      // Arrange
+      const users = [
+        {
+          lmpDate: '2026-03-10',
+          chatId: 111,
+          language: 'fr',  // unsupported
+        },
+      ];
+
+      let pregnancyDocIdUsed = '';
+      const mockGet = vi.fn().mockResolvedValue(createQuerySnapshot(users));
+      const mockWhere = vi.fn().mockReturnValue({ get: mockGet });
+      const mockCollection = vi.fn().mockImplementation((name) => {
+        if (name === 'users') {
+          return {
+            where: mockWhere,
+            doc: vi.fn().mockReturnValue({ update: vi.fn().mockResolvedValue() }),
+          };
+        }
+        if (name === 'pregnancy_data') {
+          return {
+            doc: vi.fn().mockImplementation((docId) => {
+              pregnancyDocIdUsed = docId;
+              return {
+                get: vi.fn().mockResolvedValue(createDocSnapshot({
+                  babyWeightGrams: 100,
+                  babySize: 'размером с лимон',
+                  babyDevelopment: 'Активный рост.',
+                })),
+              };
+            }),
+          };
+        }
+        return {};
+      });
+      const mockDb = { collection: mockCollection };
+
+      const calcWeek = vi.fn().mockReturnValue({ week: 14, outOfRange: false });
+
+      mockT.mockResolvedValue('Formatted message');
+      mockSendMessage.mockResolvedValue({ ok: true });
+
+      injectMocks({ firestoreMock: { db: mockDb }, pregnancyWeekMock: calcWeek });
+      mod = req('../sendWeekly.js');
+      mod.__inject({ t: mockT, sendMessage: mockSendMessage });
+
+      // Act
+      await mod.sendWeeklyNotifications();
+
+      // Assert
+      expect(pregnancyDocIdUsed).toBe('14_ru');
+    });
+
+    it('t() failure does not crash the batch', async () => {
+      // Arrange
+      const users = [
+        {
+          lmpDate: '2026-03-10',
+          chatId: 111,
+          language: 'ru',
+        },
+      ];
+
+      const mockGet = vi.fn().mockResolvedValue(createQuerySnapshot(users));
+      const mockWhere = vi.fn().mockReturnValue({ get: mockGet });
+      const mockCollection = vi.fn().mockImplementation((name) => {
+        if (name === 'users') {
+          return {
+            where: mockWhere,
+            doc: vi.fn().mockReturnValue({ update: vi.fn().mockResolvedValue() }),
+          };
+        }
+        if (name === 'pregnancy_data') {
+          return {
+            doc: vi.fn().mockReturnValue({
+              get: vi.fn().mockResolvedValue(createDocSnapshot({
+                babyWeightGrams: 100,
+                babySize: 'размером с лимон',
+                babyDevelopment: 'Активный рост.',
+              })),
+            }),
+          };
+        }
+        return {};
+      });
+      const mockDb = { collection: mockCollection };
+
+      const calcWeek = vi.fn().mockReturnValue({ week: 14, outOfRange: false });
+
+      mockT.mockRejectedValue(new Error('Firestore unreachable'));
+      mockSendMessage.mockResolvedValue({ ok: true });
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      injectMocks({ firestoreMock: { db: mockDb }, pregnancyWeekMock: calcWeek });
+      mod = req('../sendWeekly.js');
+      mod.__inject({ t: mockT, sendMessage: mockSendMessage });
+
+      // Act
+      const result = await mod.sendWeeklyNotifications();
+
+      // Assert
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[sendWeeklyNotifications] Failed to notify user 111:',
+        'Firestore unreachable',
+      );
+      expect(mockSendMessage).not.toHaveBeenCalled();
+      expect(result).toMatchObject({ checked: 1, notified: 0, skipped: 0, errors: 1 });
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('does not affect outOfRange or duplicate-protection gates', async () => {
+      // Arrange
+      const users = [
+        {
+          lmpDate: '2024-01-01',  // outOfRange
+          chatId: 1,
+        },
+        {
+          lmpDate: '2026-03-10',
+          chatId: 2,
+          lastNotifiedWeek: 14,   // already notified for week 14
+        },
+        {
+          lmpDate: '2026-03-10',
+          chatId: 3,
+          // valid: no lastNotifiedWeek, week 14
+        },
+      ];
+
+      const mockGet = vi.fn().mockResolvedValue(createQuerySnapshot(users));
+      const mockWhere = vi.fn().mockReturnValue({ get: mockGet });
+      const mockCollection = vi.fn().mockImplementation((name) => {
+        if (name === 'users') {
+          return {
+            where: mockWhere,
+            doc: vi.fn().mockReturnValue({ update: vi.fn().mockResolvedValue() }),
+          };
+        }
+        if (name === 'pregnancy_data') {
+          return {
+            doc: vi.fn().mockReturnValue({
+              get: vi.fn().mockResolvedValue(createDocSnapshot({
+                babyWeightGrams: 100,
+                babySize: 'размером с лимон',
+                babyDevelopment: 'Активный рост.',
+              })),
+            }),
+          };
+        }
+        return {};
+      });
+      const mockDb = { collection: mockCollection };
+
+      const calcWeek = vi.fn((lmpDate) => {
+        if (lmpDate === '2024-01-01') return { week: 100, outOfRange: true };
+        return { week: 14, outOfRange: false };
+      });
+
+      mockT.mockResolvedValue('formatted');
+      mockSendMessage.mockResolvedValue({ ok: true });
+
+      injectMocks({ firestoreMock: { db: mockDb }, pregnancyWeekMock: calcWeek });
+      mod = req('../sendWeekly.js');
+      mod.__inject({ t: mockT, sendMessage: mockSendMessage });
+
+      // Act
+      const result = await mod.sendWeeklyNotifications();
+
+      // Assert
+      expect(result).toMatchObject({ checked: 3, notified: 1, skipped: 2, errors: 0 });
+      expect(mockSendMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendMessage).toHaveBeenCalledWith(3, 'formatted');
     });
   });
 });
