@@ -29,6 +29,7 @@ const mockUpdateUser = vi.fn();
 const mockT = vi.fn();
 const mockSetLanguage = vi.fn();
 const mockSendMessage = vi.fn();
+const mockAskForLmpDate = vi.fn();
 
 // ---------------------------------------------------------------------------
 // Module under test — loads real modules but we inject mocks via __inject()
@@ -48,6 +49,7 @@ __inject({
   t: mockT,
   setLanguage: mockSetLanguage,
   sendMessage: mockSendMessage,
+  askForLmpDate: mockAskForLmpDate,
 });
 
 // ---------------------------------------------------------------------------
@@ -220,7 +222,7 @@ describe('handleLanguageChoice', function () {
   };
 
   describe('new user (first interaction)', function () {
-    it('creates user with language ru when lang_ru is chosen', async function () {
+    it('creates user with language ru when lang_ru is chosen and chains to askForLmpDate', async function () {
       mockGetUser.mockResolvedValue(null);
       mockCreateUser.mockResolvedValue(undefined);
       mockT.mockResolvedValue('✅ Русский язык установлен!');
@@ -237,10 +239,11 @@ describe('handleLanguageChoice', function () {
       });
       expect(mockT).toHaveBeenCalledWith(12345, 'onboarding.language_saved', { lang: 'Русский' });
       expect(mockSendMessage).toHaveBeenCalledWith(12345, '✅ Русский язык установлен!');
+      expect(mockAskForLmpDate).toHaveBeenCalledWith(12345);
       expect(result).toEqual({ status: 'language_set', language: 'ru' });
     });
 
-    it('creates user with language en when lang_en is chosen', async function () {
+    it('creates user with language en when lang_en is chosen and chains to askForLmpDate', async function () {
       mockGetUser.mockResolvedValue(null);
       mockCreateUser.mockResolvedValue(undefined);
       mockT.mockResolvedValue('✅ Language set to English!');
@@ -257,12 +260,13 @@ describe('handleLanguageChoice', function () {
       });
       expect(mockT).toHaveBeenCalledWith(12345, 'onboarding.language_saved', { lang: 'English' });
       expect(mockSendMessage).toHaveBeenCalledWith(12345, '✅ Language set to English!');
+      expect(mockAskForLmpDate).toHaveBeenCalledWith(12345);
       expect(result).toEqual({ status: 'language_set', language: 'en' });
     });
   });
 
   describe('returning user (updating language)', function () {
-    it('calls setLanguage instead of createUser for ru', async function () {
+    it('calls setLanguage instead of createUser for ru, does NOT chain to LMP', async function () {
       mockGetUser.mockResolvedValue({ chatId: 12345, language: 'ru' });
       mockSetLanguage.mockResolvedValue('ru');
       mockT.mockResolvedValue('✅ Русский язык установлен!');
@@ -271,10 +275,11 @@ describe('handleLanguageChoice', function () {
 
       expect(mockSetLanguage).toHaveBeenCalledWith(12345, 'ru');
       expect(mockCreateUser).not.toHaveBeenCalled();
+      expect(mockAskForLmpDate).not.toHaveBeenCalled();
       expect(result).toEqual({ status: 'language_set', language: 'ru' });
     });
 
-    it('calls setLanguage instead of createUser for en', async function () {
+    it('calls setLanguage instead of createUser for en, does NOT chain to LMP', async function () {
       mockGetUser.mockResolvedValue({ chatId: 12345, language: 'en' });
       mockSetLanguage.mockResolvedValue('en');
       mockT.mockResolvedValue('✅ Language set to English!');
@@ -283,6 +288,7 @@ describe('handleLanguageChoice', function () {
 
       expect(mockSetLanguage).toHaveBeenCalledWith(12345, 'en');
       expect(mockCreateUser).not.toHaveBeenCalled();
+      expect(mockAskForLmpDate).not.toHaveBeenCalled();
       expect(result).toEqual({ status: 'language_set', language: 'en' });
     });
   });

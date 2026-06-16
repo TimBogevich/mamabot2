@@ -22,6 +22,15 @@ const { t, setLanguage } = require('../../i18n');
 const { getUser, createUser } = require('../../collections/users');
 const { sendMessage } = require('../../utils/telegram');
 
+// Lazy-load askForLmpDate to avoid circular references
+/** @type {((chatId: number|string) => Promise<void>)|null} */
+let _askForLmpDate = null;
+try {
+  _askForLmpDate = require('./lmpDialog').askForLmpDate;
+} catch (_err) {
+  // FN-??? lmpDialog not merged yet — onboarding will not prompt for LMP
+}
+
 // ---------------------------------------------------------------------------
 // Internal dependency references (mutable for testability)
 // ---------------------------------------------------------------------------
@@ -121,6 +130,7 @@ async function handleLanguageChoice(chatId, callbackData, userInfo) {
   try {
     // Check if user document exists
     const user = await _getUser(chatId);
+    let isNewUser = false;
 
     if (user) {
       // Returning user — update language via setLanguage
@@ -135,12 +145,18 @@ async function handleLanguageChoice(chatId, callbackData, userInfo) {
         language: lang,
         role: 'mom',
       });
+      isNewUser = true;
     }
 
     // Send confirmation
     const langName = lang === 'ru' ? 'Русский' : 'English';
     const confirmText = await _t(chatId, 'onboarding.language_saved', { lang: langName });
     await _sendMessage(chatId, confirmText);
+
+    // For new users, continue onboarding: ask for LMP date
+    if (isNewUser && _askForLmpDate) {
+      await _askForLmpDate(chatId);
+    }
 
     return { status: 'language_set', language: lang };
   } catch (err) {
@@ -175,6 +191,7 @@ function __inject(deps) {
   if (deps.t) _t = deps.t;
   if (deps.setLanguage) _setLanguage = deps.setLanguage;
   if (deps.sendMessage) _sendMessage = deps.sendMessage;
+  if (deps.askForLmpDate !== undefined) _askForLmpDate = deps.askForLmpDate;
 }
 
 module.exports = { askLanguage, handleLanguageChoice, __inject };
