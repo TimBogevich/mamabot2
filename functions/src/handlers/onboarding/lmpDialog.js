@@ -230,7 +230,8 @@ async function handleLmpInput(chatId, text) {
   try {
     const calcFn = getCalculatePregnancyWeek();
     week = calcFn(isoDate).week;
-  } catch {
+  } catch (err) {
+    console.error('[lmpDialog] calculatePregnancyWeek failed:', err);
     const errorText = await _t(chatId, 'error.generic');
     await _sendMessage(chatId, errorText);
     return { success: false, error: 'error.generic' };
@@ -242,7 +243,8 @@ async function handleLmpInput(chatId, text) {
   // Step 5: Persist to Firestore
   try {
     await _updateUser(chatId, { lmpDate: isoDate, currentWeek: week });
-  } catch {
+  } catch (err) {
+    console.error('[lmpDialog] updateUser failed:', err);
     const errorText = await _t(chatId, 'error.generic');
     await _sendMessage(chatId, errorText);
     return { success: false, error: 'error.generic' };
