@@ -6,3 +6,6 @@ fusion.db
 fusion.db-wal
 fusion.db-shm
 .worktrees/
+backlog.md
+/.stoneforge/.worktrees/
+/.stoneforge/sync/
