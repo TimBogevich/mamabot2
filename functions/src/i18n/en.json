@@ -33,5 +33,8 @@
     "nutrition": "🍎 Nutrition",
     "vitamins": "💊 Vitamins",
     "settings": "⚙️ Settings"
+  },
+  "notifications": {
+    "new_week_full": "🤰 Week {week}\n\n⚖️ Weight: {weight} g\n📏 Size: {size}\n\n📝 {development}"
   }
 }
