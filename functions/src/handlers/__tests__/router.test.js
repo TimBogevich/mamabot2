@@ -27,6 +27,9 @@ const mockShowMainMenu = vi.fn();
 const mockHandleLanguageChoice = vi.fn();
 const mockHandleConfirmEdd = vi.fn();
 const mockHandleEditEdd = vi.fn();
+const mockShowWeekPlaceholder = vi.fn();
+const mockShowMoodPlaceholder = vi.fn();
+const mockShowNutritionPlaceholder = vi.fn();
 
 // ---------------------------------------------------------------------------
 // Module under test — loads real modules but we inject mocks via __inject()
@@ -51,6 +54,9 @@ __inject({
   handleEditEdd: mockHandleEditEdd,
   handleSettingsCallback: null,
   showSettingsMenu: null,
+  showWeekPlaceholder: null,
+  showMoodPlaceholder: null,
+  showNutritionPlaceholder: null,
 });
 
 // ---------------------------------------------------------------------------
@@ -85,6 +91,9 @@ function restoreInjectDefaults() {
     handleEditEdd: mockHandleEditEdd,
     handleSettingsCallback: null,
     showSettingsMenu: null,
+    showWeekPlaceholder: null,
+    showMoodPlaceholder: null,
+    showNutritionPlaceholder: null,
   });
 }
 
@@ -96,6 +105,9 @@ function setupDefaults() {
   mockHandleEditEdd.mockResolvedValue({ status: 'edd_prompted' });
   mockShowMainMenu.mockResolvedValue({ message_id: 42 });
   mockSendMessage.mockResolvedValue({ ok: true });
+  mockShowWeekPlaceholder.mockResolvedValue({ status: 'week_placeholder' });
+  mockShowMoodPlaceholder.mockResolvedValue({ status: 'mood_placeholder' });
+  mockShowNutritionPlaceholder.mockResolvedValue({ status: 'nutrition_placeholder' });
 }
 
 // ---------------------------------------------------------------------------
@@ -268,6 +280,44 @@ describe('routeCallback — маршрутизация menu_*', () => {
 
     expect(result.status).toBe('not_implemented');
     expect(result.domain).toBe('menu');
+  });
+});
+
+describe('routeCallback — маршрутизация menu_* с реальными заглушками', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    restoreInjectDefaults();
+    setupDefaults();
+    __inject({
+      showWeekPlaceholder: mockShowWeekPlaceholder,
+      showMoodPlaceholder: mockShowMoodPlaceholder,
+      showNutritionPlaceholder: mockShowNutritionPlaceholder,
+    });
+  });
+
+  it('menu_my_week → вызывает showWeekPlaceholder', async () => {
+    const result = await routeCallback(CHAT_ID, 'menu_my_week', DEFAULT_CONTEXT);
+
+    expect(mockShowWeekPlaceholder).toHaveBeenCalledTimes(1);
+    expect(mockShowWeekPlaceholder).toHaveBeenCalledWith(CHAT_ID);
+    expect(result).toEqual({ status: 'week_placeholder' });
+    expect(mockT).not.toHaveBeenCalledWith(CHAT_ID, 'error.unknown_callback');
+  });
+
+  it('menu_mood_diary → вызывает showMoodPlaceholder', async () => {
+    const result = await routeCallback(CHAT_ID, 'menu_mood_diary', DEFAULT_CONTEXT);
+
+    expect(mockShowMoodPlaceholder).toHaveBeenCalledTimes(1);
+    expect(mockShowMoodPlaceholder).toHaveBeenCalledWith(CHAT_ID);
+    expect(result).toEqual({ status: 'mood_placeholder' });
+  });
+
+  it('menu_nutrition → вызывает showNutritionPlaceholder', async () => {
+    const result = await routeCallback(CHAT_ID, 'menu_nutrition', DEFAULT_CONTEXT);
+
+    expect(mockShowNutritionPlaceholder).toHaveBeenCalledTimes(1);
+    expect(mockShowNutritionPlaceholder).toHaveBeenCalledWith(CHAT_ID);
+    expect(result).toEqual({ status: 'nutrition_placeholder' });
   });
 });
 

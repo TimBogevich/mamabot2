@@ -68,5 +68,14 @@
   },
   "help": {
     "message": "🤰 MamaBot — your pregnancy assistant!\n\nAvailable commands:\n/start — begin setup\n/menu — main menu\n/settings — settings\n/help — this help\n\nUse the menu buttons to navigate."
+  },
+  "week": {
+    "coming_soon": "📋 The «My Week» section is under development. Information about each pregnancy week will be available soon!"
+  },
+  "mood": {
+    "coming_soon": "😊 The «Mood Diary» section is under development. You'll soon be able to track your mood here!"
+  },
+  "nutrition": {
+    "coming_soon": "🍎 The «Nutrition» section is under development. Nutrition recommendations will be available soon!"
   }
 }

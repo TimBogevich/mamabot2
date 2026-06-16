@@ -59,6 +59,30 @@ try {
   // FN-029 ещё не смержен — settings_* обрабатываются как not-implemented
 }
 
+/** @type {((chatId: number|string) => Promise<Object>)|null} */
+let _showWeekPlaceholder = null;
+try {
+  _showWeekPlaceholder = require('./week/weekMenu').showWeekPlaceholder;
+} catch (_err) {
+  // Модуль недели ещё не смержен
+}
+
+/** @type {((chatId: number|string) => Promise<Object>)|null} */
+let _showMoodPlaceholder = null;
+try {
+  _showMoodPlaceholder = require('./mood/moodMenu').showMoodPlaceholder;
+} catch (_err) {
+  // Модуль настроения ещё не смержен
+}
+
+/** @type {((chatId: number|string) => Promise<Object>)|null} */
+let _showNutritionPlaceholder = null;
+try {
+  _showNutritionPlaceholder = require('./nutrition/nutritionMenu').showNutritionPlaceholder;
+} catch (_err) {
+  // Модуль питания ещё не смержен
+}
+
 // ---------------------------------------------------------------------------
 // Внутренние ссылки на зависимости (мутабельные для тестирования)
 // ---------------------------------------------------------------------------
@@ -183,7 +207,18 @@ async function handleMenu(chatId, callbackData) {
     return _showSettingsMenu(chatId);
   }
 
-  // В будущем: диспатч по полному callback_data (menu_my_week, menu_mood_diary, ...)
+  if (callbackData === 'menu_my_week' && _showWeekPlaceholder) {
+    return _showWeekPlaceholder(chatId);
+  }
+
+  if (callbackData === 'menu_mood_diary' && _showMoodPlaceholder) {
+    return _showMoodPlaceholder(chatId);
+  }
+
+  if (callbackData === 'menu_nutrition' && _showNutritionPlaceholder) {
+    return _showNutritionPlaceholder(chatId);
+  }
+
   return handleNotImplemented(chatId, callbackData);
 }
 
@@ -319,6 +354,9 @@ async function handleUnknownCallback(chatId) {
  * @param {Function|null} [deps.handleConfirmEdd] - Mock handleConfirmEdd (or null to simulate FN-006 missing)
  * @param {Function|null} [deps.handleSettingsCallback] - Mock handleSettingsCallback (or null to simulate FN-029 missing)
  * @param {Function|null} [deps.showSettingsMenu] - Mock showSettingsMenu (or null to simulate FN-029 missing)
+ * @param {Function|null} [deps.showWeekPlaceholder] - Mock showWeekPlaceholder
+ * @param {Function|null} [deps.showMoodPlaceholder] - Mock showMoodPlaceholder
+ * @param {Function|null} [deps.showNutritionPlaceholder] - Mock showNutritionPlaceholder
  * @returns {void}
  *
  * @example
@@ -337,6 +375,9 @@ function __inject(deps) {
   if (deps.handleEditEdd !== undefined) _handleEditEdd = deps.handleEditEdd;
   if (deps.handleSettingsCallback !== undefined) _handleSettingsCallback = deps.handleSettingsCallback;
   if (deps.showSettingsMenu !== undefined) _showSettingsMenu = deps.showSettingsMenu;
+  if (deps.showWeekPlaceholder !== undefined) _showWeekPlaceholder = deps.showWeekPlaceholder;
+  if (deps.showMoodPlaceholder !== undefined) _showMoodPlaceholder = deps.showMoodPlaceholder;
+  if (deps.showNutritionPlaceholder !== undefined) _showNutritionPlaceholder = deps.showNutritionPlaceholder;
 }
 
 module.exports = { routeCallback, __inject };
