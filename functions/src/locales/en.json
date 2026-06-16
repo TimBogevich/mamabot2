@@ -53,6 +53,7 @@
   "error": {
     "unknown_callback": "❌ Unknown command. Please use the menu.",
     "unknown_command": "❌ Unknown command. Use /help for the list of available commands.",
+    "use_menu": "👋 Use the menu buttons or commands to navigate.\n/help — list of available commands.",
     "generic": "❌ An error occurred. Please try again later.",
     "session_expired": "⏰ Session expired. Please start again: /start"
   },

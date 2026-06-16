@@ -141,14 +141,9 @@ exports.webhook = onRequest(
         return;
       }
 
-      // 5. Fallback for unrecognized commands — suggest /help
-      if (text.startsWith('/')) {
-        const unknownCmdText = await t(chatId, 'error.unknown_command');
-        await sendMessage(chatId, unknownCmdText);
-      } else {
-        // Echo fallback for plain text (should not normally be reached)
-        await sendMessage(chatId, text);
-      }
+      // 5. Fallback for unrecognized input — suggest menu/help
+      const fallbackText = await t(chatId, 'error.use_menu');
+      await sendMessage(chatId, fallbackText);
 
       res.sendStatus(200);
     } catch (err) {
