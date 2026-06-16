@@ -67,7 +67,7 @@ beforeEach(function () {
 describe('askLanguage', function () {
   describe('returning user (already has language)', function () {
     it('sends already_registered when language is ru', async function () {
-      mockGetUser.mockResolvedValue({ chatId: 12345, language: 'ru' });
+      mockGetUser.mockResolvedValue({ chatId: 12345, language: 'ru', lmpDate: '2026-01-15' });
       mockT.mockResolvedValue('👋 Ты уже зарегистрирован(а)! Используй меню для навигации.');
 
       const result = await askLanguage(12345);
@@ -82,7 +82,7 @@ describe('askLanguage', function () {
     });
 
     it('sends already_registered when language is en', async function () {
-      mockGetUser.mockResolvedValue({ chatId: 12345, language: 'en' });
+      mockGetUser.mockResolvedValue({ chatId: 12345, language: 'en', lmpDate: '2026-01-15' });
       mockT.mockResolvedValue("👋 You're already registered! Use the menu to navigate.");
 
       const result = await askLanguage(12345);
@@ -96,7 +96,7 @@ describe('askLanguage', function () {
     });
 
     it('does NOT send reply_markup for returning users', async function () {
-      mockGetUser.mockResolvedValue({ chatId: 12345, language: 'ru' });
+      mockGetUser.mockResolvedValue({ chatId: 12345, language: 'ru', lmpDate: '2026-01-15' });
       mockT.mockResolvedValue('already registered message');
 
       await askLanguage(12345);
@@ -267,7 +267,7 @@ describe('handleLanguageChoice', function () {
 
   describe('returning user (updating language)', function () {
     it('calls setLanguage instead of createUser for ru, does NOT chain to LMP', async function () {
-      mockGetUser.mockResolvedValue({ chatId: 12345, language: 'ru' });
+      mockGetUser.mockResolvedValue({ chatId: 12345, language: 'ru', lmpDate: '2026-01-15' });
       mockSetLanguage.mockResolvedValue('ru');
       mockT.mockResolvedValue('✅ Русский язык установлен!');
 
@@ -280,7 +280,7 @@ describe('handleLanguageChoice', function () {
     });
 
     it('calls setLanguage instead of createUser for en, does NOT chain to LMP', async function () {
-      mockGetUser.mockResolvedValue({ chatId: 12345, language: 'en' });
+      mockGetUser.mockResolvedValue({ chatId: 12345, language: 'en', lmpDate: '2026-01-15' });
       mockSetLanguage.mockResolvedValue('en');
       mockT.mockResolvedValue('✅ Language set to English!');
 

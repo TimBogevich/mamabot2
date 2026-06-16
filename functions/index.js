@@ -82,6 +82,14 @@ try {
   // not available
 }
 
+/** @type {((chatId: number|string, text: string) => Promise<Object>)|null} */
+let _handleLmpInput = null;
+try {
+  _handleLmpInput = require('./src/handlers/onboarding/lmpDialog').handleLmpInput;
+} catch (_err) {
+  // lmpDialog not available
+}
+
 const { t } = require('./src/i18n');
 
 const TELEGRAM_TOKEN = defineSecret('TELEGRAM_TOKEN');
@@ -186,6 +194,20 @@ exports.webhook = onRequest(
           }
         } catch (_err) {
           console.warn('[webhook] partnerState routing error:', _err.message);
+        }
+      }
+
+      // 3.8: Route text messages as LMP date input (onboarding)
+      if (_handleLmpInput) {
+        try {
+          const user = await getUser(chatId);
+          if (user && user.language && !user.lmpDate) {
+            await _handleLmpInput(chatId, text);
+            res.sendStatus(200);
+            return;
+          }
+        } catch (_err) {
+          console.warn('[webhook] lmpInput routing error:', _err.message);
         }
       }
 

@@ -18,6 +18,18 @@ const { pregnancyDataDocId, PREGNANCY_DATA_COLLECTION } = require('../../schemas
 const { db } = require('../../firestore');
 
 // ---------------------------------------------------------------------------
+// Ленивая загрузка calculatePregnancyWeek (для тестируемости через __inject)
+// ---------------------------------------------------------------------------
+
+/** @type {typeof require('../../utils/pregnancyWeek').calculatePregnancyWeek} */
+let _calculatePregnancyWeek = null;
+try {
+  _calculatePregnancyWeek = require('../../utils/pregnancyWeek').calculatePregnancyWeek;
+} catch (_err) {
+  // FN-026 ещё не смержен
+}
+
+// ---------------------------------------------------------------------------
 // Безопасная загрузка showMainMenu из mainMenu
 // ---------------------------------------------------------------------------
 
@@ -27,6 +39,18 @@ try {
   _showMainMenu = require('../menu/mainMenu').showMainMenu;
 } catch (_err) {
   // mainMenu ещё не смержен
+}
+
+// ---------------------------------------------------------------------------
+// Ленивая загрузка askForLmpDate (для автоматического онбординга)
+// ---------------------------------------------------------------------------
+
+/** @type {((chatId: number|string) => Promise<void>)|null} */
+let _askForLmpDate = null;
+try {
+  _askForLmpDate = require('../onboarding/lmpDialog').askForLmpDate;
+} catch (_err) {
+  // lmpDialog ещё не смержен
 }
 
 // ---------------------------------------------------------------------------
@@ -81,14 +105,25 @@ async function _showWeekInfoImpl(chatId, weekOverride) {
 
   if (!user || !user.lmpDate) {
     await _sendMessage(chatId, await _t(chatId, 'week.no_lmp'));
-    if (_showMainMenu) {
+    if (_askForLmpDate) {
+      await _askForLmpDate(chatId);
+    } else if (_showMainMenu) {
       await _showMainMenu(chatId);
     }
     return { status: 'no_lmp' };
   }
 
   const language = user.language === 'en' ? 'en' : 'ru';
-  const week = weekOverride || user.currentWeek;
+
+  // Пересчитываем неделю из lmpDate (а не из закешированного currentWeek)
+  let week = weekOverride;
+  if (!week && _calculatePregnancyWeek) {
+    const calc = _calculatePregnancyWeek(user.lmpDate);
+    week = calc.week;
+  }
+  if (!week) {
+    week = user.currentWeek;
+  }
 
   if (!week || week < 1 || week > 40) {
     await _sendMessage(chatId, await _t(chatId, 'week.no_lmp'));
@@ -245,6 +280,8 @@ async function handleWeekCallback(chatId, callbackData) {
  * @param {Function} [deps.sendMessage]
  * @param {Object} [deps.db]
  * @param {Function|null} [deps.showMainMenu]
+ * @param {Function|null} [deps.calculatePregnancyWeek]
+ * @param {Function|null} [deps.askForLmpDate]
  */
 function __inject(deps) {
   if (deps.t) _t = deps.t;
@@ -252,6 +289,8 @@ function __inject(deps) {
   if (deps.sendMessage) _sendMessage = deps.sendMessage;
   if (deps.db) _db = deps.db;
   if (deps.showMainMenu !== undefined) _showMainMenu = deps.showMainMenu;
+  if (deps.calculatePregnancyWeek !== undefined) _calculatePregnancyWeek = deps.calculatePregnancyWeek;
+  if (deps.askForLmpDate !== undefined) _askForLmpDate = deps.askForLmpDate;
 }
 
 module.exports = { showWeekInfo, handleWeekCallback, __inject };

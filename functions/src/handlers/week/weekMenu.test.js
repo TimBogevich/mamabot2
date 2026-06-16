@@ -12,6 +12,8 @@ const mockT = vi.fn();
 const mockGetUser = vi.fn();
 const mockSendMessage = vi.fn();
 const mockShowMainMenu = vi.fn();
+const mockCalculatePregnancyWeek = vi.fn();
+const mockAskForLmpDate = vi.fn();
 
 const mockDbCollection = vi.fn();
 const mockDoc = vi.fn();
@@ -30,6 +32,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   mockDoc.mockReturnValue({ get: mockGet });
   mockGet.mockResolvedValue(mockSnap);
+  mockCalculatePregnancyWeek.mockReturnValue({ week: 0 });
 
   const { __inject } = require('./weekMenu');
   __inject({
@@ -38,6 +41,8 @@ beforeEach(() => {
     sendMessage: mockSendMessage,
     db: mockDb,
     showMainMenu: mockShowMainMenu,
+    calculatePregnancyWeek: mockCalculatePregnancyWeek,
+    askForLmpDate: mockAskForLmpDate,
   });
 });
 
@@ -57,7 +62,7 @@ describe('showWeekInfo', () => {
 
     expect(mockT).toHaveBeenCalledWith(12345, 'week.no_lmp');
     expect(mockSendMessage).toHaveBeenCalledWith(12345, 'week.no_lmp');
-    expect(mockShowMainMenu).toHaveBeenCalledWith(12345);
+    expect(mockAskForLmpDate).toHaveBeenCalledWith(12345);
     expect(result).toEqual({ status: 'no_lmp' });
   });
 
@@ -68,6 +73,7 @@ describe('showWeekInfo', () => {
     const result = await showWeekInfo(12345);
 
     expect(mockT).toHaveBeenCalledWith(12345, 'week.no_lmp');
+    expect(mockAskForLmpDate).toHaveBeenCalledWith(12345);
     expect(result).toEqual({ status: 'no_lmp' });
   });
 
@@ -184,6 +190,36 @@ describe('showWeekInfo', () => {
     const navRow = keyboard.inline_keyboard[0];
     expect(navRow.length).toBe(1);
     expect(navRow[0].callback_data).toBe('week_show_39');
+  });
+
+  it('пересчитывает неделю динамически из lmpDate, игнорируя устаревший currentWeek', async () => {
+    mockGetUser.mockResolvedValue({ language: 'ru', lmpDate: '2026-01-15', currentWeek: 5 });
+    mockCalculatePregnancyWeek.mockReturnValue({ week: 22 });
+    const data = { weekNumber: 22, babyDevelopment: '...', babySize: 'кокос', babyWeightGrams: 430 };
+    mockGet.mockResolvedValue({ exists: true, id: '22_ru', data: () => data });
+    mockT.mockImplementation(async (_chatId, key, vars) => {
+      if (key === 'week.title') return `Неделя ${vars.week}`;
+      return key;
+    });
+
+    const result = await showWeekInfo(12345);
+
+    expect(mockGetUser).toHaveBeenCalledWith(12345);
+    expect(mockCalculatePregnancyWeek).toHaveBeenCalledWith('2026-01-15');
+    expect(mockDoc).toHaveBeenCalledWith('22_ru');
+    expect(result).toEqual({ status: 'week_shown', week: 22 });
+  });
+
+  it('при отсутствии lmpDate запускает онбординг через askForLmpDate', async () => {
+    mockGetUser.mockResolvedValue({ language: 'ru', lmpDate: null, currentWeek: null });
+    mockT.mockImplementation((_chatId, key) => Promise.resolve(key));
+
+    const result = await showWeekInfo(12345);
+
+    expect(mockSendMessage).toHaveBeenCalledWith(12345, 'week.no_lmp');
+    expect(mockAskForLmpDate).toHaveBeenCalledWith(12345);
+    expect(mockShowMainMenu).not.toHaveBeenCalled();
+    expect(result).toEqual({ status: 'no_lmp' });
   });
 });
 

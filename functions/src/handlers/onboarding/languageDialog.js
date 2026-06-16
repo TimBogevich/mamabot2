@@ -73,7 +73,13 @@ async function askLanguage(chatId) {
     const user = await _getUser(chatId);
 
     if (user && user.language) {
-      // Returning user — skip language selection
+      // If user has language but no lmpDate — redirect to LMP input
+      if (!user.lmpDate && _askForLmpDate) {
+        await _askForLmpDate(chatId);
+        return { status: 'lmp_prompted' };
+      }
+
+      // Returning user with complete onboarding — skip language selection
       const text = await _t(chatId, 'onboarding.already_registered');
       await _sendMessage(chatId, text);
       return { status: 'already_registered' };
@@ -135,6 +141,11 @@ async function handleLanguageChoice(chatId, callbackData, userInfo) {
     if (user) {
       // Returning user — update language via setLanguage
       await _setLanguage(chatId, lang);
+
+      // If user has no lmpDate, continue onboarding
+      if (!user.lmpDate && _askForLmpDate) {
+        await _askForLmpDate(chatId);
+      }
     } else {
       // First interaction — create user document
       await _createUser(chatId, {
