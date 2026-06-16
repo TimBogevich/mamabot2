@@ -11,7 +11,22 @@
     "invalid_date": "❌ Invalid date format. Please enter the date in DD.MM.YYYY format.",
     "date_in_future": "❌ Date cannot be in the future. Please enter a valid date.",
     "date_too_old": "⚠️ This date is more than 42 weeks ago. A typical pregnancy lasts about 40 weeks. Please check the date and try again.",
-    "week_calculated": "🤰 You are {{week}} weeks pregnant! Estimated due date: {{edc}}."
+    "week_calculated": "🤰 You are {{week}} weeks pregnant! Estimated due date: {{edc}}.",
+    "edd_confirm": "📅 Estimated due date: {{edd}}. Correct?",
+    "ask_edd": "📅 Enter the estimated due date in DD.MM.YYYY format:",
+    "edd_calculated": "📅 Estimated due date: {{edd}}.",
+    "edd_confirm_btn": "✅ Correct",
+    "edd_correct": "✅ Correct",
+    "edd_edit": "✏️ Edit",
+    "edd_edit_btn": "✏️ Edit",
+    "edd_invalid": "❌ Invalid date. Please enter a valid due date in DD.MM.YYYY format.",
+    "edd_too_far": "❌ Due date is too far from the last menstrual period (maximum 300 days). Please enter a valid date.",
+    "edd_confirmed": "✅ EDD {{edd}} saved! You've successfully completed setup.",
+    "edd_prompt": "📅 Enter the estimated due date in DD.MM.YYYY format:",
+    "edd_invalid_format": "❌ Invalid date format. Please enter the date in DD.MM.YYYY format.",
+    "edd_before_lmp": "❌ Due date cannot be before the last menstrual period ({{lmp}}). Please enter a valid date.",
+    "edd_too_late": "❌ Due date is too far from the last menstrual period (maximum 300 days). Please enter a valid date.",
+    "edd_saved": "✅ EDD {{edd}} saved! You've successfully completed setup."
   },
   "menu": {
     "week_info": "📋 Week Info",
@@ -27,17 +42,31 @@
     "change_language": "🌍 Change Language",
     "view_lmp": "📅 My LMP Date",
     "reset_data": "🗑️ Reset All Data",
-    "reset_confirm": "⚠️ Are you sure? All data will be permanently deleted and cannot be recovered."
+    "reset_confirm": "⚠️ Are you sure? All data will be permanently deleted and cannot be recovered.",
+    "language_changed": "✅ Language changed to English.",
+    "lmp_date_display": "📅 Last menstrual period date: {{date}}",
+    "lmp_not_set": "📅 Last menstrual period date has not been set yet. Please complete onboarding: /start",
+    "reset_yes": "✅ Yes, reset",
+    "reset_no": "❌ No, cancel",
+    "data_reset_done": "♻️ All data has been reset. Please restart onboarding: /start"
   },
   "error": {
     "unknown_callback": "❌ Unknown command. Please use the menu.",
+    "unknown_command": "❌ Unknown command. Use /help for the list of available commands.",
+    "use_menu": "👋 Use the menu buttons or commands to navigate.\n/help — list of available commands.",
     "generic": "❌ An error occurred. Please try again later.",
     "session_expired": "⏰ Session expired. Please start again: /start"
   },
   "notifications": {
-    "new_week": "🎉 Week {week} of pregnancy begins! See what's new.",
-    "vitamin_reminder": "💊 Don't forget to take your vitamins today!",
-    "partner_invite": "👩‍❤️‍👨 Invite your partner — your code: {code}",
     "new_week_full": "🤰 Week {{week}}\n\n⚖️ Weight: {{weight}} g\n📏 Size: {{size}}\n\n📝 {{development}}"
+  },
+  "commands": {
+    "start": "🚀 Start the bot",
+    "help": "ℹ️ Show help",
+    "menu": "📋 Show main menu",
+    "settings": "⚙️ Open settings"
+  },
+  "help": {
+    "message": "🤰 MamaBot — your pregnancy assistant!\n\nAvailable commands:\n/start — begin setup\n/menu — main menu\n/settings — settings\n/help — this help\n\nUse the menu buttons to navigate."
   }
 }
