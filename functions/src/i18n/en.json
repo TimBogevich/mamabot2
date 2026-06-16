@@ -37,6 +37,7 @@
   "notifications": {
     "new_week": "🎉 Week {week} of pregnancy begins! See what's new.",
     "vitamin_reminder": "💊 Don't forget to take your vitamins today!",
-    "partner_invite": "👩‍❤️‍👨 Invite your partner — your code: {code}"
+    "partner_invite": "👩‍❤️‍👨 Invite your partner — your code: {code}",
+    "new_week_full": "🤰 Week {{week}}\n\n⚖️ Weight: {{weight}} g\n📏 Size: {{size}}\n\n📝 {{development}}"
   }
 }
