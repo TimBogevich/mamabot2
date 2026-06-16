@@ -1,5 +1,7 @@
 # Схемы коллекций Firestore — MamaBot
 
+> ⚠️ **Deprecated** — canonical Firestore schema docs have moved to [`docs/firestore-schema.md`](../../docs/firestore-schema.md) at the repository root. This file is kept for reference only and may be out of date.
+
 > Дата: 2026-06-15
 > Проект: mamabot-97d22
 > Документация описывает структуру документов в коллекциях Firestore бота MamaBot.

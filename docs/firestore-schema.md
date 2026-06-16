@@ -37,7 +37,7 @@ The collection is populated from canonical JSON asset files in `functions/src/da
 | `functions/src/data/pregnancyWeeks_ru.json` | 40 week records (weeks 1–40) in Russian |
 | `functions/src/data/pregnancyWeeks_en.json` | 40 week records (weeks 1–40) in English |
 
-Each file is a JSON array of 40 objects containing `weekNumber`, `babyWeightGrams`, `babySize`, and `babyDevelopment` fields. The seed script (`npm run seed:pregnancy-data`) transforms these records into full Firestore documents — adding empty-string defaults for the 4 content fields not present in JSON (`motherChanges`, `nutritionTips`, `vitaminRecommendations`, `symptomsCommon`), plus `language`, `createdAt`, and `updatedAt` — and writes all 80 documents (40 weeks × 2 languages) to the `pregnancy_data` collection using composite `{weekNumber}_{language}` document IDs. The script is idempotent: re-running with `set()` overwrites existing documents without creating duplicates. Requires `FIRESTORE_EMULATOR_HOST` or Application Default Credentials (ADC).
+Each file is a JSON array of 40 objects containing `weekNumber`, `babyWeightGrams`, `babySize`, and `babyDevelopment` fields. The fields `motherChanges`, `nutritionTips`, `vitaminRecommendations`, and `symptomsCommon` may be provided in the JSON; if absent, the seed script defaults them to empty strings.
 
 ### Validation
 
