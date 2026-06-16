@@ -70,7 +70,19 @@
     "message": "🤰 MamaBot — your pregnancy assistant!\n\nAvailable commands:\n/start — begin setup\n/menu — main menu\n/settings — settings\n/help — this help\n\nUse the menu buttons to navigate."
   },
   "week": {
-    "coming_soon": "📋 The «My Week» section is under development. Information about each pregnancy week will be available soon!"
+    "title": "📋 Week {{week}} of Pregnancy",
+    "label_fetal_development": "👶 Fetal Development",
+    "label_mother_body": "🤰 Mother's Body",
+    "label_size": "📏 Size: {{size}}",
+    "label_weight": "⚖️ Weight: {{weight}} g",
+    "label_nutrition": "🍎 Nutrition Advice",
+    "label_vitamins": "💊 Vitamins",
+    "label_symptoms": "🤒 Common Symptoms",
+    "no_lmp": "📅 Please complete onboarding first: /start",
+    "no_data": "📋 Pregnancy data for week {{week}} not found.",
+    "back_to_menu": "🔙 Main Menu",
+    "prev_week": "◀️ Week {{week}}",
+    "next_week": "Week {{week}} ▶️"
   },
   "mood": {
     "coming_soon": "😊 The «Mood Diary» section is under development. You'll soon be able to track your mood here!"

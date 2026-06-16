@@ -59,10 +59,10 @@ try {
   // FN-029 ещё не смержен — settings_* обрабатываются как not-implemented
 }
 
-/** @type {((chatId: number|string) => Promise<Object>)|null} */
-let _showWeekPlaceholder = null;
+/** @type {((chatId: number|string, callbackData: string) => Promise<Object>)|null} */
+let _handleWeekCallback = null;
 try {
-  _showWeekPlaceholder = require('./week/weekMenu').showWeekPlaceholder;
+  _handleWeekCallback = require('./week/weekMenu').handleWeekCallback;
 } catch (_err) {
   // Модуль недели ещё не смержен
 }
@@ -207,8 +207,8 @@ async function handleMenu(chatId, callbackData) {
     return _showSettingsMenu(chatId);
   }
 
-  if (callbackData === 'menu_my_week' && _showWeekPlaceholder) {
-    return _showWeekPlaceholder(chatId);
+  if (callbackData === 'menu_my_week' && _handleWeekCallback) {
+    return _handleWeekCallback(chatId, callbackData);
   }
 
   if (callbackData === 'menu_mood_diary' && _showMoodPlaceholder) {
@@ -310,6 +310,10 @@ async function routeCallback(chatId, callbackData, context) {
     case 'settings':
       return handleSettingsRoute(chatId, callbackData);
     case 'week':
+      if (_handleWeekCallback) {
+        return _handleWeekCallback(chatId, callbackData);
+      }
+      return handleNotImplemented(chatId, callbackData);
     case 'mood':
     case 'nutrition':
       return handleNotImplemented(chatId, callbackData);
@@ -354,7 +358,7 @@ async function handleUnknownCallback(chatId) {
  * @param {Function|null} [deps.handleConfirmEdd] - Mock handleConfirmEdd (or null to simulate FN-006 missing)
  * @param {Function|null} [deps.handleSettingsCallback] - Mock handleSettingsCallback (or null to simulate FN-029 missing)
  * @param {Function|null} [deps.showSettingsMenu] - Mock showSettingsMenu (or null to simulate FN-029 missing)
- * @param {Function|null} [deps.showWeekPlaceholder] - Mock showWeekPlaceholder
+ * @param {Function|null} [deps.handleWeekCallback] - Mock handleWeekCallback
  * @param {Function|null} [deps.showMoodPlaceholder] - Mock showMoodPlaceholder
  * @param {Function|null} [deps.showNutritionPlaceholder] - Mock showNutritionPlaceholder
  * @returns {void}
@@ -375,7 +379,7 @@ function __inject(deps) {
   if (deps.handleEditEdd !== undefined) _handleEditEdd = deps.handleEditEdd;
   if (deps.handleSettingsCallback !== undefined) _handleSettingsCallback = deps.handleSettingsCallback;
   if (deps.showSettingsMenu !== undefined) _showSettingsMenu = deps.showSettingsMenu;
-  if (deps.showWeekPlaceholder !== undefined) _showWeekPlaceholder = deps.showWeekPlaceholder;
+  if (deps.handleWeekCallback !== undefined) _handleWeekCallback = deps.handleWeekCallback;
   if (deps.showMoodPlaceholder !== undefined) _showMoodPlaceholder = deps.showMoodPlaceholder;
   if (deps.showNutritionPlaceholder !== undefined) _showNutritionPlaceholder = deps.showNutritionPlaceholder;
 }
