@@ -270,14 +270,14 @@ describe('registerWebhook', () => {
     });
   });
 
-  it('calls setMyCommands after successful setWebhook', async () => {
+  it('calls deleteMyCommands after successful setWebhook', async () => {
     const fetchMock = vi.fn();
     // First call: setWebhook
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ ok: true, description: 'Webhook was set' }),
     });
-    // Second call: setMyCommands
+    // Second call: deleteMyCommands
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ ok: true }),
@@ -295,19 +295,12 @@ describe('registerWebhook', () => {
     // First call: setWebhook
     expect(fetchMock.mock.calls[0][0]).toContain('/setWebhook');
 
-    // Second call: setMyCommands
-    const [cmdUrl, cmdOpts] = fetchMock.mock.calls[1];
-    expect(cmdUrl).toBe(`${TELEGRAM_API_URL}/bot${TEST_TOKEN}/setMyCommands`);
-    const cmdBody = JSON.parse(cmdOpts.body);
-    expect(cmdBody.commands).toHaveLength(8);
-    expect(cmdBody.commands[0]).toEqual({ command: 'start', description: '🚀 Start the bot / Начать' });
-    expect(cmdBody.commands[3]).toEqual({ command: 'week', description: '📅 My week / Моя неделя' });
-    expect(cmdBody.commands[4]).toEqual({ command: 'mood', description: '😊 Mood diary / Дневник настроения' });
-    expect(cmdBody.commands[5]).toEqual({ command: 'nutrition', description: '🍎 Nutrition / Питание' });
-    expect(cmdBody.commands[6]).toEqual({ command: 'invite', description: '👥 Invite partner / Пригласить партнёра' });
+    // Second call: deleteMyCommands
+    const [cmdUrl] = fetchMock.mock.calls[1];
+    expect(cmdUrl).toBe(`${TELEGRAM_API_URL}/bot${TEST_TOKEN}/deleteMyCommands`);
   });
 
-  it('does not call setMyCommands when setWebhook fails', async () => {
+  it('does not call deleteMyCommands when setWebhook fails', async () => {
     const fetchMock = vi.fn();
     fetchMock.mockResolvedValueOnce({
       ok: false,
@@ -325,15 +318,15 @@ describe('registerWebhook', () => {
     expect(fetchMock.mock.calls[0][0]).toContain('/setWebhook');
   });
 
-  it('returns success even when setMyCommands fails (non-blocking)', async () => {
+  it('returns success even when deleteMyCommands fails (non-blocking)', async () => {
     const fetchMock = vi.fn();
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ ok: true, description: 'Webhook was set' }),
     });
-    // setMyCommands fails
+    // deleteMyCommands fails
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    fetchMock.mockRejectedValueOnce(new Error('setMyCommands failed'));
+    fetchMock.mockRejectedValueOnce(new Error('deleteMyCommands failed'));
     globalThis.fetch = fetchMock;
 
     const registerWebhook = loadRegisterWebhook();
@@ -348,8 +341,8 @@ describe('registerWebhook', () => {
       webhookUrl: EXPECTED_WEBHOOK_URL,
     });
     expect(consoleWarnSpy).toHaveBeenCalledWith(
-      '[webhook] setMyCommands failed:',
-      expect.stringContaining('setMyCommands failed'),
+      '[webhook] deleteMyCommands failed:',
+      expect.stringContaining('deleteMyCommands failed'),
     );
     consoleWarnSpy.mockRestore();
   });

@@ -1,7 +1,7 @@
 const {onRequest} = require('firebase-functions/v2/https');
 const {onSchedule} = require('firebase-functions/v2/scheduler');
 const {defineSecret} = require('firebase-functions/params');
-const {TELEGRAM_API, getTelegramToken, sendMessage, setMyCommands} = require('./src/utils/telegram');
+const {TELEGRAM_API, getTelegramToken, sendMessage, deleteMyCommands} = require('./src/utils/telegram');
 const { routeCallback } = require('./src/handlers/router');
 const languageDialog = require('./src/handlers/onboarding/languageDialog');
 const { getUser } = require('./src/collections/users');
@@ -328,19 +328,9 @@ async function registerWebhook(req, res) {
 
     if (data.ok) {
       try {
-        const defaultCommands = [
-          { command: 'start', description: '🚀 Start the bot / Начать' },
-          { command: 'help', description: 'ℹ️ Help / Справка' },
-          { command: 'menu', description: '📋 Main menu / Главное меню' },
-          { command: 'week', description: '📅 My week / Моя неделя' },
-          { command: 'mood', description: '😊 Mood diary / Дневник настроения' },
-          { command: 'nutrition', description: '🍎 Nutrition / Питание' },
-          { command: 'invite', description: '👥 Invite partner / Пригласить партнёра' },
-          { command: 'settings', description: '⚙️ Settings / Настройки' },
-        ];
-        await setMyCommands(defaultCommands);
+        await deleteMyCommands();
       } catch (cmdErr) {
-        console.warn('[webhook] setMyCommands failed:', cmdErr.message);
+        console.warn('[webhook] deleteMyCommands failed:', cmdErr.message);
       }
     }
 
