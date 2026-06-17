@@ -143,52 +143,119 @@ async function _showWeekInfoImpl(chatId, weekOverride) {
     return { status: 'no_data', week };
   }
 
-  // Формирование сообщения
-  const title = await _t(chatId, 'week.title', { week: data.weekNumber });
+  // -----------------------------------------------------------------------
+  // Формирование сводного сообщения (summary) + детальные кнопки
+  // -----------------------------------------------------------------------
+  const weekNum = data.weekNumber;
+  const title = await _t(chatId, 'week.summary_title', { week: weekNum });
+
+  // BabyDevelopment: первые ~250 символов + '...'
+  const devRaw = data.babyDevelopment || '';
+  const devSummary =
+    devRaw.length > 250 ? devRaw.slice(0, 250) + '...' : devRaw;
+
   const labelDev = await _t(chatId, 'week.label_fetal_development');
-  const labelMother = await _t(chatId, 'week.label_mother_body');
-  const labelNutrition = await _t(chatId, 'week.label_nutrition');
-  const labelVitamins = await _t(chatId, 'week.label_vitamins');
-  const labelSymptoms = await _t(chatId, 'week.label_symptoms');
 
   const sizeText = await _t(chatId, 'week.label_size', { size: data.babySize || '' });
   const weightText = await _t(chatId, 'week.label_weight', { weight: data.babyWeightGrams || '?' });
 
-  const blocks = [];
-  blocks.push(title);
-  blocks.push('');
-  blocks.push(`${labelDev}\n${data.babyDevelopment || ''}`);
+  // Строим сводку напрямую (без blocks-массива)
+  let summary = title + '\n\n';
+  summary += labelDev + '\n' + devSummary;
+  summary += '\n\n' + sizeText;
+  summary += '\n' + weightText;
 
-  if (data.motherChanges) {
-    blocks.push('');
-    blocks.push(`${labelMother}\n${data.motherChanges}`);
-  }
-
-  blocks.push('');
-  blocks.push(sizeText);
-  blocks.push(weightText);
-
-  if (data.nutritionTips) {
-    blocks.push('');
-    blocks.push(`${labelNutrition}\n${data.nutritionTips}`);
-  }
-
-  if (data.vitaminRecommendations) {
-    blocks.push('');
-    blocks.push(`${labelVitamins}\n${data.vitaminRecommendations}`);
-  }
-
-  if (data.symptomsCommon) {
-    blocks.push('');
-    blocks.push(`${labelSymptoms}\n${data.symptomsCommon}`);
-  }
-
-  const text = blocks.join('\n');
-
-  // Клавиатура навигации
-  const backLabel = await _t(chatId, 'week.back_to_menu');
-
+  // -----------------------------------------------------------------------
+  // Клавиатура: детальные кнопки, навигация, назад
+  // -----------------------------------------------------------------------
   const keyboard = { inline_keyboard: [] };
+
+  // Определяем, какие секции имеют данные
+  const sections = [];
+  if (data.motherChanges) {
+    sections.push({
+      field: 'mother',
+      labelKey: 'week.detail_mother',
+    });
+  }
+  if (data.nutritionTips) {
+    sections.push({
+      field: 'nutrition',
+      labelKey: 'week.detail_nutrition',
+    });
+  }
+  if (data.vitaminRecommendations) {
+    sections.push({
+      field: 'vitamins',
+      labelKey: 'week.detail_vitamins',
+    });
+  }
+  if (data.symptomsCommon) {
+    sections.push({
+      field: 'symptoms',
+      labelKey: 'week.detail_symptoms',
+    });
+  }
+  // development всегда есть (хотя бы пустая строка), добавляем кнопку только если есть текст
+  if (devRaw) {
+    sections.unshift({
+      field: 'development',
+      labelKey: 'week.detail_development',
+    });
+  }
+
+  // Если ни одна секция не имеет данных — fallback к полному inline-формату
+  if (sections.length === 0) {
+    const fallbackTitle = await _t(chatId, 'week.title', { week: weekNum });
+    const fallbackBlocks = [fallbackTitle];
+    fallbackBlocks.push('');
+    fallbackBlocks.push(labelDev + '\n' + devRaw);
+
+    if (data.motherChanges) {
+      fallbackBlocks.push('');
+      fallbackBlocks.push((await _t(chatId, 'week.label_mother_body')) + '\n' + data.motherChanges);
+    }
+
+    fallbackBlocks.push('');
+    fallbackBlocks.push(sizeText);
+    fallbackBlocks.push(weightText);
+
+    if (data.nutritionTips) {
+      fallbackBlocks.push('');
+      fallbackBlocks.push((await _t(chatId, 'week.label_nutrition')) + '\n' + data.nutritionTips);
+    }
+
+    if (data.vitaminRecommendations) {
+      fallbackBlocks.push('');
+      fallbackBlocks.push((await _t(chatId, 'week.label_vitamins')) + '\n' + data.vitaminRecommendations);
+    }
+
+    if (data.symptomsCommon) {
+      fallbackBlocks.push('');
+      fallbackBlocks.push((await _t(chatId, 'week.label_symptoms')) + '\n' + data.symptomsCommon);
+    }
+
+    summary = fallbackBlocks.join('\n');
+  }
+
+  // Строки детальных кнопок (до 3 в ряд)
+  if (sections.length > 0) {
+    const detailRows = [];
+    let currentRow = [];
+    for (let i = 0; i < sections.length; i++) {
+      const sec = sections[i];
+      const label = await _t(chatId, sec.labelKey);
+      currentRow.push({
+        text: label,
+        callback_data: `week_detail_${sec.field}_${weekNum}`,
+      });
+      if (currentRow.length === 3 || i === sections.length - 1) {
+        detailRows.push(currentRow);
+        currentRow = [];
+      }
+    }
+    keyboard.inline_keyboard.push(...detailRows);
+  }
 
   // Кнопки предыдущей/следующей недели
   const navRow = [];
@@ -204,14 +271,104 @@ async function _showWeekInfoImpl(chatId, weekOverride) {
     keyboard.inline_keyboard.push(navRow);
   }
 
-  // Кнопка «Назад»
+  // Кнопка «Назад» в главное меню
+  const backLabel = await _t(chatId, 'week.back_to_menu');
   keyboard.inline_keyboard.push([
     { text: backLabel, callback_data: 'week_back' },
   ]);
 
-  await _sendMessage(chatId, text, { reply_markup: keyboard });
+  await _sendMessage(chatId, summary, { reply_markup: keyboard });
 
   return { status: 'week_shown', week: data.weekNumber };
+}
+
+// ---------------------------------------------------------------------------
+// handleWeekDetail — отправка отдельной секции
+// ---------------------------------------------------------------------------
+
+/**
+ * Карта соответствия имени секции → поле данных + ключ заголовка
+ */
+const DETAIL_SECTION_MAP = {
+  development: {
+    field: 'babyDevelopment',
+    titleKey: 'week.detail_development_title',
+  },
+  mother: {
+    field: 'motherChanges',
+    titleKey: 'week.detail_mother_title',
+  },
+  nutrition: {
+    field: 'nutritionTips',
+    titleKey: 'week.detail_nutrition_title',
+  },
+  vitamins: {
+    field: 'vitaminRecommendations',
+    titleKey: 'week.detail_vitamins_title',
+  },
+  symptoms: {
+    field: 'symptomsCommon',
+    titleKey: 'week.detail_symptoms_title',
+  },
+};
+
+/**
+ * Отправляет сообщение с содержимым одной секции недели беременности
+ * и кнопкой «Назад к сводке».
+ *
+ * @param {number|string} chatId - Telegram chat ID
+ * @param {string} section - Имя секции: development|mother|nutrition|vitamins|symptoms
+ * @param {number} weekNum - Номер недели
+ * @param {Object} data - Полный объект pregnancyData
+ * @returns {Promise<{status: string, week: number, section: string}>}
+ */
+async function handleWeekDetail(chatId, section, weekNum, data) {
+  const mapping = DETAIL_SECTION_MAP[section];
+
+  // Неизвестная секция
+  if (!mapping) {
+    return { status: 'unknown_section', week: weekNum, section };
+  }
+
+  const sectionContent = data[mapping.field] || '';
+  const title = await _t(chatId, mapping.titleKey, { week: weekNum });
+
+  let messageText;
+  if (!sectionContent) {
+    messageText = title + '\n\n' + (await _t(chatId, 'week.detail_no_data'));
+    // Fallback-сообщение очень короткое, обрезка не нужна
+    await _sendMessage(chatId, messageText, {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: await _t(chatId, 'week.back_to_summary'), callback_data: `week_detail_back_${weekNum}` }],
+        ],
+      },
+    });
+    return { status: 'detail_shown_no_data', week: weekNum, section };
+  }
+
+  // Безопасная обрезка: заголовок + разделители + контент ≤ 4000
+  const SAFE_MAX = 4000;
+  if (sectionContent.length + title.length + 2 > SAFE_MAX) {
+    const overhead = title.length + 2; // заголовок + '\n\n'
+    const maxContent = SAFE_MAX - overhead - 3; // 3 символа на '...'
+    const truncated = sectionContent.slice(0, Math.max(0, maxContent)) + '...';
+    messageText = title + '\n\n' + truncated;
+  } else {
+    messageText = title + '\n\n' + sectionContent;
+  }
+
+  // Кнопка «Назад к сводке»
+  const backLabel = await _t(chatId, 'week.back_to_summary');
+  const keyboard = {
+    inline_keyboard: [
+      [{ text: backLabel, callback_data: `week_detail_back_${weekNum}` }],
+    ],
+  };
+
+  await _sendMessage(chatId, messageText, { reply_markup: keyboard });
+
+  return { status: 'detail_shown', week: weekNum, section };
 }
 
 // ---------------------------------------------------------------------------
@@ -266,6 +423,36 @@ async function handleWeekCallback(chatId, callbackData) {
     }
   }
 
+  // week_detail_back_{N} — вернуться к сводке недели
+  const backMatch = callbackData.match(/^week_detail_back_(\d+)$/);
+  if (backMatch) {
+    const weekNum = parseInt(backMatch[1], 10);
+    if (weekNum >= 1 && weekNum <= 40) {
+      return _showWeekInfoImpl(chatId, weekNum);
+    }
+  }
+
+  // week_detail_{section}_{week} — детальная секция
+  const detailMatch = callbackData.match(/^week_detail_(development|mother|nutrition|vitamins|symptoms)_(\d+)$/);
+  if (detailMatch) {
+    const section = detailMatch[1];
+    const weekNum = parseInt(detailMatch[2], 10);
+    if (weekNum >= 1 && weekNum <= 40) {
+      // Получаем язык пользователя
+      const user = await _getUser(chatId);
+      if (!user) {
+        return { status: 'no_user' };
+      }
+      const language = user.language === 'en' ? 'en' : 'ru';
+      const data = await loadPregnancyData(weekNum, language);
+      if (!data) {
+        await _sendMessage(chatId, await _t(chatId, 'week.no_data', { week: weekNum }));
+        return { status: 'no_data', week: weekNum };
+      }
+      return handleWeekDetail(chatId, section, weekNum, data);
+    }
+  }
+
   return _showWeekInfoImpl(chatId);
 }
 
@@ -293,4 +480,4 @@ function __inject(deps) {
   if (deps.askForLmpDate !== undefined) _askForLmpDate = deps.askForLmpDate;
 }
 
-module.exports = { showWeekInfo, handleWeekCallback, __inject };
+module.exports = { showWeekInfo, handleWeekCallback, handleWeekDetail, __inject };
