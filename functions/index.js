@@ -92,6 +92,21 @@ try {
 
 const { t } = require('./src/i18n');
 
+// ---------------------------------------------------------------------------
+// Testability hooks — __inject allows tests to override dependencies
+// ---------------------------------------------------------------------------
+
+/** @type {Object|null} */
+let _injected = null;
+
+/**
+ * Override internal dependencies for testing.
+ * @param {Object} deps
+ */
+function __inject(deps) {
+  _injected = deps;
+}
+
 const TELEGRAM_TOKEN = defineSecret('TELEGRAM_TOKEN');
 
 // ---------------------------------------------------------------------------
@@ -104,6 +119,59 @@ try {
   _sendWeeklyNotifications = require('./src/handlers/notifications/sendWeekly').sendWeeklyNotifications;
 } catch (_err) {
   // FN-020 handler not yet available — scheduled function will log a warning
+}
+
+// ---------------------------------------------------------------------------
+// Reply keyboard text routing — matches button labels and dispatches to handlers
+// ---------------------------------------------------------------------------
+
+/**
+ * Route text messages from reply keyboard buttons to their corresponding handlers.
+ * Returns true if the text matched a reply button, false otherwise (fall through).
+ *
+ * @param {number|string} chatId
+ * @param {string} text
+ * @returns {Promise<boolean>}
+ */
+async function handleReplyKeyboardText(chatId, text) {
+  try {
+    const tFn = (_injected && _injected.t !== undefined) ? _injected.t : t;
+    const sendFn = (_injected && _injected.sendMessage !== undefined) ? _injected.sendMessage : sendMessage;
+    const showMainMenu = (_injected && _injected.showMainMenu !== undefined) ? _injected.showMainMenu : _showMainMenu;
+    const showWeekInfo = (_injected && _injected.showWeekInfo !== undefined) ? _injected.showWeekInfo : _showWeekInfo;
+    const showMoodMenu = (_injected && _injected.showMoodMenu !== undefined) ? _injected.showMoodMenu : _showMoodMenu;
+    const showNutritionMenu = (_injected && _injected.showNutritionMenu !== undefined) ? _injected.showNutritionMenu : _showNutritionMenu;
+    const showPartnerMenu = (_injected && _injected.showPartnerMenu !== undefined) ? _injected.showPartnerMenu : _showPartnerMenu;
+    const showSettingsMenu = (_injected && _injected.showSettingsMenu !== undefined) ? _injected.showSettingsMenu : _showSettingsMenu;
+
+    const replyButtonMap = [
+      { key: 'menu.my_week', handler: showWeekInfo },
+      { key: 'menu.mood_diary', handler: showMoodMenu },
+      { key: 'menu.nutrition', handler: showNutritionMenu },
+      { key: 'menu.invite_partner', handler: showPartnerMenu },
+      { key: 'menu.settings', handler: showSettingsMenu },
+      { key: 'menu.help', handler: null, isHelp: true },
+    ];
+
+    for (const btn of replyButtonMap) {
+      const label = await tFn(chatId, btn.key);
+      if (text === label) {
+        if (btn.isHelp) {
+          const helpText = await tFn(chatId, 'help.message');
+          await sendFn(chatId, helpText);
+          if (showMainMenu) await showMainMenu(chatId);
+        } else if (btn.handler) {
+          await btn.handler(chatId);
+        } else {
+          await sendFn(chatId, await tFn(chatId, 'error.generic'));
+        }
+        return true;
+      }
+    }
+  } catch (_err) {
+    console.warn('[handleReplyKeyboardText] routing error:', _err.message);
+  }
+  return false;
 }
 
 exports.webhook = onRequest(
@@ -279,6 +347,12 @@ exports.webhook = onRequest(
         return;
       }
 
+      // 4.5: Route text messages from reply keyboard buttons
+      if (await handleReplyKeyboardText(chatId, text)) {
+        res.sendStatus(200);
+        return;
+      }
+
       // 5. Fallback for unrecognized input — suggest menu/help
       const fallbackText = await t(chatId, 'error.use_menu');
       await sendMessage(chatId, fallbackText);
@@ -340,4 +414,7 @@ async function registerWebhook(req, res) {
   }
 }
 
+// Preserve existing exports (e.g. exports.webhook) while adding new ones
 module.exports.registerWebhook = registerWebhook;
+module.exports.handleReplyKeyboardText = handleReplyKeyboardText;
+module.exports.__inject = __inject;

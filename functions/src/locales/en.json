@@ -36,7 +36,9 @@
     "invite_partner": "👩‍❤️‍👨 Invite Partner",
     "back": "🔙 Back",
     "my_week": "📋 My Week",
-    "help": "❓ Help"
+    "help": "❓ Help",
+    "show_button": "📋 Main Menu",
+    "placeholder": "Choose a menu section..."
   },
   "settings": {
     "title": "⚙️ Settings",

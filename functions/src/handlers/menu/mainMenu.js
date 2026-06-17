@@ -2,17 +2,12 @@
  * @fileoverview Модуль рендеринга главного меню MamaBot.
  *
  * Экспортирует функцию showMainMenu(chatId), которая отправляет в Telegram-чат
- * сообщение с главным меню: 4 кнопки в 2 ряда с локализованными подписями.
+ * два сообщения:
+ *   1. inline-кнопка «📋 Главное меню» (callback_data="menu_show")
+ *   2. reply-клавиатура 3×2 с разделами бота под полем ввода
  *
- * Кнопки и соответствующие callback_data:
- *   - «Моя неделя»  → menu_my_week
- *   - «Дневник настроения» → menu_mood_diary
- *   - «Питание»     → menu_nutrition
- *   - «Пригласить партнёра» → menu_invite_partner
- *   - «Настройки»   → menu_settings
- *   - «Помощь»      → menu_help
- *
- * Используется на финальном шаге онбординга и при повторном /start после FN-024.
+ * reply_markup с inline_keyboard и keyboard mutually exclusive в Telegram API,
+ * поэтому используются два отдельных вызова sendMessage.
  *
  * @module mainMenu
  */
@@ -39,13 +34,16 @@ let _sendMessage = sendMessage;
  * синхронной валидации chatId.
  *
  * @param {number|string} chatId - Telegram chat ID (гарантированно не null/undefined)
- * @returns {Promise<Object>} Результат вызова _sendMessage
+ * @returns {Promise<Object>} Результат вызова _sendMessage для inline-сообщения
  */
 async function _showMainMenuImpl(chatId) {
   // Заголовок сообщения
   const headerText = await _t(chatId, 'menu.my_week');
 
-  // Подписи кнопок
+  // Подписи для inline-кнопки
+  const showButtonLabel = await _t(chatId, 'menu.show_button');
+
+  // Подписи для reply-кнопок
   const myWeekLabel = await _t(chatId, 'menu.my_week');
   const moodDiaryLabel = await _t(chatId, 'menu.mood_diary');
   const nutritionLabel = await _t(chatId, 'menu.nutrition');
@@ -53,38 +51,55 @@ async function _showMainMenuImpl(chatId) {
   const settingsLabel = await _t(chatId, 'menu.settings');
   const helpLabel = await _t(chatId, 'menu.help');
 
-  // Inline-клавиатура: 4 ряда
-  const keyboard = {
-    inline_keyboard: [
-      [
-        { text: myWeekLabel, callback_data: 'menu_my_week' },
-        { text: moodDiaryLabel, callback_data: 'menu_mood_diary' },
-      ],
-      [
-        { text: nutritionLabel, callback_data: 'menu_nutrition' },
-        { text: invitePartnerLabel, callback_data: 'menu_invite_partner' },
-      ],
-      [
-        { text: settingsLabel, callback_data: 'menu_settings' },
-      ],
-      [
-        { text: helpLabel, callback_data: 'menu_help' },
-      ],
-    ],
-  };
+  // Placeholder для reply-клавиатуры
+  const placeholder = await _t(chatId, 'menu.placeholder');
 
-  return await _sendMessage(chatId, headerText, { reply_markup: keyboard });
+  // 1. Сообщение с inline-кнопкой «📋 Главное меню»
+  const inlineResult = await _sendMessage(chatId, headerText, {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: showButtonLabel, callback_data: 'menu_show' },
+        ],
+      ],
+    },
+  });
+
+  // 2. Сообщение с reply-клавиатурой 3×2 под полем ввода
+  await _sendMessage(chatId, headerText, {
+    reply_markup: {
+      keyboard: [
+        [
+          { text: myWeekLabel },
+          { text: moodDiaryLabel },
+        ],
+        [
+          { text: nutritionLabel },
+          { text: invitePartnerLabel },
+        ],
+        [
+          { text: settingsLabel },
+          { text: helpLabel },
+        ],
+      ],
+      resize_keyboard: true,
+      input_field_placeholder: placeholder,
+    },
+  });
+
+  // Возвращаем результат inline-сообщения для обратной совместимости
+  return inlineResult;
 }
 
 /**
- * Отправляет в Telegram-чат сообщение с главным меню MamaBot.
+ * Отправляет в Telegram-чат главное меню MamaBot.
  *
- * Формирует inline-клавиатуру из 2 рядов по 2 кнопки с локализованными
- * подписями, полученными через t(). Все строки (заголовок и подписи кнопок)
- * берутся из i18n-ключей menu.*.
+ * Формирует:
+ *   - inline-сообщение с одной кнопкой «📋 Главное меню» (callback_data = menu_show)
+ *   - reply-клавиатуру 3×2 для постоянного доступа к разделам под полем ввода
  *
  * @param {number|string} chatId - Telegram chat ID
- * @returns {Promise<Object>} Результат вызова sendMessage (ответ Telegram API)
+ * @returns {Promise<Object>} Результат вызова sendMessage для inline-сообщения
  * @throws {Error} Синхронно, если chatId не передан (null или undefined)
  *
  * @example

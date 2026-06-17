@@ -203,6 +203,7 @@ async function handleOnboarding(chatId, callbackData, context) {
 
 /**
  * Обработчик домена 'menu'.
+ * Диспатчит menu_show → showMainMenu (FN-006).
  * Диспатчит menu_settings → showSettingsMenu (FN-029).
  * Остальные menu_* callback'и пока — placeholder (подменю ещё не реализованы).
  *
@@ -211,6 +212,14 @@ async function handleOnboarding(chatId, callbackData, context) {
  * @returns {Promise<Object>} Result object
  */
 async function handleMenu(chatId, callbackData) {
+  // menu_show → показать главное меню (FN-006)
+  if (callbackData === 'menu_show') {
+    if (_showMainMenu) {
+      await _showMainMenu(chatId);
+    }
+    return { status: 'menu_shown' };
+  }
+
   // Специальная обработка: menu_settings → открыть подменю настроек
   if (callbackData === 'menu_settings' && _showSettingsMenu) {
     return _showSettingsMenu(chatId);
