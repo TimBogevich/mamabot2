@@ -180,7 +180,6 @@ describe('showWeekInfo', () => {
     mockT.mockImplementation(async (_chatId, key, vars) => {
       if (key === 'week.title') return `Неделя ${vars.week}`;
       if (key === 'week.next_week') return `Неделя ${vars.week} ▶️`;
-      if (key === 'week.back_to_menu') return 'Назад';
       return key;
     });
 
@@ -200,7 +199,6 @@ describe('showWeekInfo', () => {
     mockT.mockImplementation(async (_chatId, key, vars) => {
       if (key === 'week.title') return `Неделя ${vars.week}`;
       if (key === 'week.prev_week') return `◀️ ${vars.week} неделя`;
-      if (key === 'week.back_to_menu') return 'Назад';
       return key;
     });
 
@@ -263,18 +261,14 @@ describe('handleWeekCallback', () => {
     expect(result).toEqual({ status: 'week_shown', week: 12 });
   });
 
-  it('week_back показывает текущую неделю', async () => {
-    mockGetUser.mockResolvedValue({ language: 'ru', lmpDate: '2026-01-01', currentWeek: 8 });
-    const data = { weekNumber: 8, babyDevelopment: '...', babySize: 'малина', babyWeightGrams: 2 };
-    mockGet.mockResolvedValue({ exists: true, id: '8_ru', data: () => data });
-    mockT.mockImplementation(async (_chatId, key, vars) => {
-      if (key === 'week.title') return `Неделя ${vars.week}`;
-      return key;
-    });
+  it('week_back вызывает showMainMenu', async () => {
+    mockShowMainMenu.mockResolvedValue({ status: 'menu_shown' });
 
     const result = await handleWeekCallback(12345, 'week_back');
 
-    expect(result).toEqual({ status: 'week_shown', week: 8 });
+    expect(mockShowMainMenu).toHaveBeenCalledWith(12345);
+    expect(mockSendMessage).not.toHaveBeenCalled();
+    expect(result).toEqual({ status: 'menu_shown' });
   });
 
   it('week_show_N показывает указанную неделю', async () => {
@@ -618,6 +612,6 @@ describe('detail button visibility', () => {
     // Есть навигация и назад
     const navCallbacks = allButtons.map(b => b.callback_data).filter(c => c.startsWith('week_show_'));
     expect(navCallbacks.length).toBeGreaterThanOrEqual(1);
-    expect(allButtons.map(b => b.callback_data)).toContain('week_back');
+    expect(allButtons.map(b => b.callback_data)).not.toContain('week_back');
   });
 });

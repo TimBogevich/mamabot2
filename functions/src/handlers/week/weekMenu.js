@@ -271,12 +271,6 @@ async function _showWeekInfoImpl(chatId, weekOverride) {
     keyboard.inline_keyboard.push(navRow);
   }
 
-  // Кнопка «Назад» в главное меню
-  const backLabel = await _t(chatId, 'week.back_to_menu');
-  keyboard.inline_keyboard.push([
-    { text: backLabel, callback_data: 'week_back' },
-  ]);
-
   await _sendMessage(chatId, summary, { reply_markup: keyboard });
 
   return { status: 'week_shown', week: data.weekNumber };
@@ -398,7 +392,7 @@ function showWeekInfo(chatId) {
  *
  * Поддерживаемые callback_data:
  *   - week_show_{N} — показать конкретную неделю
- *   - week_back     — вернуться в главное меню
+ *   - week_back     — (graceful fallback) вернуться в главное меню
  *   - week_show     — показать текущую неделю (из главного меню)
  *
  * @param {number|string} chatId - Telegram chat ID
@@ -410,8 +404,14 @@ async function handleWeekCallback(chatId, callbackData) {
     throw new Error('chatId is required');
   }
 
-  if (callbackData === 'week_back' || callbackData === 'menu_my_week') {
+  if (callbackData === 'menu_my_week') {
     return _showWeekInfoImpl(chatId);
+  }
+  if (callbackData === 'week_back') {
+    if (_showMainMenu) {
+      return _showMainMenu(chatId);
+    }
+    return { status: 'back_unavailable' };
   }
 
   // week_show_{N} — показать конкретную неделю
