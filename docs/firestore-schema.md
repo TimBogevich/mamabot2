@@ -1,6 +1,6 @@
 # Firestore Schema — MamaBot
 
-Last updated: 2026-06-15
+Last updated: 2026-06-17
 
 ---
 
@@ -10,7 +10,11 @@ Stores pregnancy-week content (weeks 1–40) in Russian and English.
 
 ### Document ID format
 
-`{weekNumber}_{language}` — e.g., `1_ru`, `15_en`, `40_en`
+```
+{weekNumber}_{language}
+```
+
+e.g., `1_ru`, `15_en`, `40_en`
 
 ### Fields
 
@@ -43,6 +47,11 @@ Each file is a JSON array of 40 objects containing `weekNumber`, `babyWeightGram
 
 See `functions/src/schemas/pregnancy_data.js` for the validation logic (`validatePregnancyData` function).
 
+### Source Code
+
+- `functions/src/schemas/pregnancy_data.js` — validation logic
+- `functions/scripts/seed-pregnancy-data.js` — seed script for populating 40 weeks
+
 ---
 
 ## Collection: `users`
@@ -72,31 +81,12 @@ Telegram `chat.id` is used as the document ID to guarantee natural uniqueness an
 | `lmpDate` | `string` | ❌ | — | First day of last menstrual period, ISO format (`YYYY-MM-DD`). |
 | `currentWeek` | `number` | ❌ | — | Calculated current pregnancy week (1–42). |
 | `eddDate` | `string` | ❌ | — | Estimated due date, ISO format (`YYYY-MM-DD`). |
+| `lastNotifiedWeek` | `number` | ❌ | — | Last pregnancy week a notification was sent to (1–42). Updated atomically by `sendWeeklyNotifications`. |
 | `onboardingState` | `string` | ❌ | — | Transient onboarding state (`'awaiting_edd'`). Cleared on completion. |
 | `partnerCode` | `string` | ❌ | — | 6-character invitation code for partner linking. |
 | `role` | `'mom' \| 'partner'` | ✅ | `'mom'` | User role: mom or partner. |
 | `createdAt` | `Timestamp` | ✅ | `serverTimestamp()` | Document creation timestamp. |
 | `updatedAt` | `Timestamp` | ✅ | `serverTimestamp()` | Document last update timestamp. |
-
-### Indexes
-
-| Поле | Тип | Обязательное | По умолчанию | Описание |
-|------|-----|-------------|-------------|----------|
-| `chatId` | `number` | Да | — | Telegram chat ID. Используется как идентификатор документа. |
-| `userId` | `string` | Да | — | Telegram user ID из `update.message.from.id`. |
-| `firstName` | `string` | Да | — | Имя пользователя в Telegram. |
-| `lastName` | `string` | Нет | — | Фамилия пользователя в Telegram (опционально). |
-| `username` | `string` | Нет | — | @username пользователя в Telegram (опционально). |
-| `language` | `'ru' \| 'en'` | Да | `'ru'` | Выбранный язык интерфейса. |
-| `lmpDate` | `string` | Нет | — | Дата первого дня последней менструации в формате ISO (`YYYY-MM-DD`). |
-| `currentWeek` | `number` | Нет | — | Вычисленная текущая неделя беременности (1–42). |
-| `eddDate` | `string` | Нет | — | Предполагаемая дата родов (EDD) в формате ISO, рассчитанная по правилу Негеле. |
-| `lastNotifiedWeek` | `number` | Нет | — | Номер недели беременности, на которую была отправлена последняя еженедельная рассылка (1–42). Обновляется атомарно функцией `sendWeeklyNotifications` сразу после отправки уведомления. |
-| `partnerCode` | `string` | Нет | — | 6-символьный код-приглашение для связи с партнёром. |
-| `role` | `'mom' \| 'partner'` | Да | `'mom'` | Роль пользователя: будущая мама или партнёр. |
-| `createdAt` | `Timestamp` | Да | `serverTimestamp()` | Время создания документа (устанавливается Firestore). |
-| `updatedAt` | `Timestamp` | Да | `serverTimestamp()` | Время последнего обновления документа (устанавливается Firestore). |
-
 
 No additional composite indexes required for `users` — `chatId` is the document ID and indexed automatically.
 
@@ -139,16 +129,153 @@ No additional composite indexes required for `users` — `chatId` is the documen
 2. **Updates** — on settings or pregnancy progress changes: `language`, `lmpDate`, `currentWeek`, `partnerCode`.
 3. **Deletion** — not implemented. Users can request data removal via support.
 
-| Сценарий | Операция | Код |
-|----------|----------|-----|
-| Регистрация пользователя | Создание документа | `createUser(chatId, data)` |
-| Загрузка профиля при старте | Чтение документа | `getUser(chatId)` |
-| Смена языка | Обновление поля `language` | `updateUser(chatId, { language: 'en' })` |
-| Установка даты LMP | Обновление поля `lmpDate` | `updateUser(chatId, { lmpDate: '2026-03-01' })` |
-| Обновление роли | Обновление поля `role` | `updateUser(chatId, { role: 'partner' })` |
-| Создание кода партнёра | Обновление поля `partnerCode` | `updateUser(chatId, { partnerCode: 'XYZ789' })` |
-| Еженедельная рассылка уведомлений | Обновление поля `lastNotifiedWeek` | `updateUser(chatId, { lastNotifiedWeek: week })` в `sendWeeklyNotifications` |
+### Source Code
 
+- `functions/src/collections/users.js` — CRUD helpers (`createUser`, `getUser`, `updateUser`)
+- `functions/src/handlers/onboarding/lmpDialog.js` — LMP date input handler
+- `functions/src/handlers/onboarding/languageDialog.js` — language selection handler
+- `functions/src/firestore.js` — Firestore client initialization
+
+---
+
+## Collection: `mood_logs`
+
+Stores daily mood and energy level entries for each user. One document per day per user (technically no unique constraint is enforced).
+
+Document ID: auto-generated by Firestore.
+
+### Fields
+
+| Field | Type | Required | Nullable | Description |
+|-------|------|:--------:|:--------:|-------------|
+| `userId` | `string` | ✅ | ❌ | Telegram user ID (stringified) |
+| `date` | `string` (ISO 8601) | ✅ | ❌ | Date in `YYYY-MM-DD` format |
+| `mood` | `number` (integer) | ✅ | ❌ | Mood rating (1–5; 1 = very bad, 5 = excellent) |
+| `energy` | `number` (integer) | ✅ | ❌ | Energy level (1–5; 1 = very low, 5 = very high) |
+| `note` | `string` | ❌ | ❌ | Optional note about the mood/energy state (defaults to `""`) |
+| `createdAt` | `Timestamp` | ✅ | ✅ | Time of document creation (Firestore serverTimestamp; null before write) |
+
+### Example document
+
+```json
+{
+  "userId": "123456789",
+  "date": "2026-06-15",
+  "mood": 4,
+  "energy": 3,
+  "note": "Чувствую себя хорошо сегодня",
+  "createdAt": "<server timestamp>"
+}
+```
+
+### Queries
+
+**By userId + date range (primary pattern):**
+
+```js
+const { getMoodLogsByUserAndDate } = require("./src/schemas/moodLogs");
+
+const logs = await getMoodLogsByUserAndDate(
+  db,
+  userId,
+  "2026-06-01",
+  "2026-06-15",
+);
+```
+
+Requires a composite index on `mood_logs`: `userId` ASC, `date` DESC (described in `firestore.indexes.json`).
+
+### Creation
+
+```js
+const { createMoodLog } = require("./src/schemas/moodLogs");
+
+const doc = createMoodLog({
+  userId: "123456789",
+  date: "2026-06-15",
+  mood: 4,
+  energy: 3,
+  note: "Всё отлично!",
+});
+
+await db.collection("mood_logs").add(doc);
+```
+
+### Source Code
+
+- `functions/src/schemas/moodLogs.js` — validation, factory, and query helpers
+
+---
+
+## Collection: `nutrition_logs`
+
+Stores meal, vitamin, and water intake records for each user. One document per meal (multiple entries per day possible).
+
+Document ID: auto-generated by Firestore.
+
+### Fields
+
+| Field | Type | Required | Nullable | Description |
+|-------|------|:--------:|:--------:|-------------|
+| `userId` | `string` | ✅ | ❌ | Telegram user ID (stringified) |
+| `date` | `string` (ISO 8601) | ✅ | ❌ | Date in `YYYY-MM-DD` format |
+| `mealType` | `string` (enum) | ✅ | ❌ | Type of meal: `'breakfast'`, `'lunch'`, `'dinner'`, or `'snack'` |
+| `foods` | `array` of `string` | ✅ | ❌ | List of food items consumed (at least 1 element) |
+| `vitamins` | `array` of `string` | ❌ | ❌ | List of vitamins taken (defaults to `[]`) |
+| `waterGlasses` | `number` (integer) | ✅ | ❌ | Number of glasses of water consumed (≥0, defaults to `0`) |
+| `createdAt` | `Timestamp` | ✅ | ✅ | Time of document creation (Firestore serverTimestamp; null before write) |
+
+### Example document
+
+```json
+{
+  "userId": "123456789",
+  "date": "2026-06-15",
+  "mealType": "lunch",
+  "foods": ["куриная грудка", "бурый рис", "брокколи"],
+  "vitamins": ["витамин D", "железо"],
+  "waterGlasses": 3,
+  "createdAt": "<server timestamp>"
+}
+```
+
+### Queries
+
+**By userId + date range (primary pattern):**
+
+```js
+const { getNutritionLogsByUserAndDate } = require("./src/schemas/nutritionLogs");
+
+const logs = await getNutritionLogsByUserAndDate(
+  db,
+  userId,
+  "2026-06-01",
+  "2026-06-15",
+);
+```
+
+Requires a composite index on `nutrition_logs`: `userId` ASC, `date` DESC (described in `firestore.indexes.json`).
+
+### Creation
+
+```js
+const { createNutritionLog } = require("./src/schemas/nutritionLogs");
+
+const doc = createNutritionLog({
+  userId: "123456789",
+  date: "2026-06-15",
+  mealType: "lunch",
+  foods: ["салат", "рыба"],
+  vitamins: ["витамин C"],
+  waterGlasses: 2,
+});
+
+await db.collection("nutrition_logs").add(doc);
+```
+
+### Source Code
+
+- `functions/src/schemas/nutritionLogs.js` — validation, factory, and query helpers
 
 ---
 
@@ -174,20 +301,6 @@ The 6-character alphanumeric code (uppercase Latin + digits) serves as the docum
 | `status` | `'pending' \| 'active'` | ✅ | `'pending'` | Partnership status: `'pending'` or `'active'`. |
 | `createdAt` | `Timestamp` | ✅ | `serverTimestamp()` | Document creation timestamp. |
 | `updatedAt` | `Timestamp` | ✅ | `serverTimestamp()` | Document last update timestamp. |
-
-### Indexes
-
-One composite index is required for `partners`:
-
-- **Field:** `momChatId` (ASC) — for `getPartnershipByMom()` query (`.where('momChatId', '==', momChatId).limit(1)`).
-
-Create this index in Firebase Console:
-
-| Collection | Field | Direction |
-|-----------|-------|-----------|
-| `partners` | `momChatId` | Ascending |
-
-> **Note:** Without this index, `getPartnershipByMom()` will fail with `FAILED_PRECONDITION: The query requires an index.`
 
 ### Sample documents
 
@@ -239,9 +352,54 @@ Create this index in Firebase Console:
 - **`partners.{partnerCode}.momChatId`** — Links to the mom's profile in `users`.
 - **`partners.{partnerCode}.partnerChatId`** — Links to the partner's profile in `users`.
 
+### Source Code
+
+- `functions/src/collections/partners.js` — CRUD helpers
+
 ---
 
-## Firestore Security Rules summary
+## Composite Indexes
+
+The file `firestore.indexes.json` (project root) defines the composite indexes required for queries:
+
+| Collection | Index Fields | Direction |
+|------------|--------------|-----------|
+| `mood_logs` | `userId`, `date` | ASC, DESC |
+| `nutrition_logs` | `userId`, `date` | ASC, DESC |
+| `partners` | `momChatId` | Ascending |
+
+> **Note:** For `partners`, the `momChatId` index is required for `getPartnershipByMom()` (`.where('momChatId', '==', momChatId).limit(1)`). Without it, the query fails with `FAILED_PRECONDITION: The query requires an index.`
+
+---
+
+## Validation Functions
+
+Each schema exports a `validate<Schema>(doc)` function for checking documents before writing to Firestore. The function returns:
+
+```js
+{ valid: boolean, errors: string[] }
+```
+
+Usage example:
+
+```js
+const { validateMoodLog } = require("./src/schemas/moodLogs");
+
+const result = validateMoodLog(doc);
+if (!result.valid) {
+  console.error("Validation errors:", result.errors);
+}
+```
+
+| Collection | Validation | Factory | Query Helper |
+|------------|------------|---------|--------------|
+| `pregnancy_data` | `validatePregnancyData(doc)` | — | — |
+| `mood_logs` | `validateMoodLog(doc)` | `createMoodLog(params)` | `getMoodLogsByUserAndDate(db, uid, start, end)` |
+| `nutrition_logs` | `validateNutritionLog(doc)` | `createNutritionLog(params)` | `getNutritionLogsByUserAndDate(db, uid, start, end)` |
+
+---
+
+## Firestore Security Rules
 
 Rules are defined in `firestore.rules` (project root).
 
@@ -262,152 +420,7 @@ Rules are defined in `firestore.rules` (project root).
 | `partners/{partnerCode}` | Mom (`momChatId == uid`) or linked partner (`partnerChatId == uid`) | Server only |
 | Everything else | Denied | Denied |
 
-| `users/{chatId}` | Только владелец (`request.auth.uid == chatId`) | Только владелец |
-| `mood_logs/{docId}` | Только владелец (`resource.data.userId == request.auth.uid`) | Только владелец |
-| `nutrition_logs/{docId}` | Только владелец (`resource.data.userId == request.auth.uid`) | Только владелец |
-| `pregnancy_data/{docId}` | Любой аутентифицированный | Только сервер (firebase-admin) |
-| `partners/{partnerCode}` | Мама (`momChatId == uid`) или привязанный партнёр (`partnerChatId == uid`) | Только сервер |
-| Всё остальное | Запрещено | Запрещено |
-
-
 ### Testing
 
 Rules are covered by automated tests (Firestore emulator + `@firebase/rules-unit-testing`).
 Run: `cd functions && npm run test:rules`
-
-Правила покрыты автоматическими тестами (Firestore emulator + `@firebase/rules-unit-testing`).
-Запуск: `cd functions && npm run test:rules`
-
----
-
-# Схема коллекции `partners`
-
-## Обзор
-
-Коллекция `partners` хранит связки (partnership) между мамой и её партнёром. Каждый документ представляет одно партнёрство, создаваемое мамой через генерацию 6-символьного кода-приглашения (`partnerCode`). Партнёр вводит этот код, и бот связывает их, обновляя документ.
-
-Коллекция обеспечивает:
-- Логическую связь между двумя пользователями (мамой и партнёром).
-- Безопасный доступ: мама и привязанный партнёр могут читать документ, но запись — только через сервер (firebase-admin).
-- Возможность отслеживать статус: `pending` (ожидает привязки) или `active` (партнёр привязан).
-
----
-
-## Идентификатор документа
-
-```
-partnerCode
-```
-
-**Почему:** `partnerCode` — уникальный 6-символьный код (латиница + цифры верхнего регистра), генерируемый мамой. Использование `partnerCode` в качестве идентификатора документа гарантирует:
-- Естественную уникальность — один документ на код-приглашение.
-- Быстрый поиск по `partnerCode` без необходимости в составном индексе — прямой lookup при вводе кода партнёром.
-- Простую интеграцию: код является и идентификатором, и полем документа.
-
----
-
-## Справочник полей
-
-| Поле | Тип | Обязательное | По умолчанию | Описание |
-|------|-----|-------------|-------------|----------|
-| `partnerCode` | `string` | Да | — | 6-символьный код-приглашение (латиница + цифры верхнего регистра, `/^[A-Z0-9]{6}$/`). Также используется как ID документа. |
-| `momChatId` | `string` | Да | — | Telegram chat ID мамы (stringified, для сравнения в Firestore Rules). |
-| `partnerChatId` | `string` | Нет | `null` | Telegram chat ID партнёра. `null` до момента привязки. После привязки — `string`. |
-| `status` | `'pending' \| 'active'` | Да | `'pending'` | Статус партнёрства: `'pending'` — код создан, партнёр ещё не привязан; `'active'` — партнёр привязан. |
-| `createdAt` | `Timestamp` | Да | `serverTimestamp()` | Время создания документа (устанавливается Firestore). |
-| `updatedAt` | `Timestamp` | Да | `serverTimestamp()` | Время последнего обновления документа (устанавливается Firestore). |
-
----
-
-## Индексы
-
-Для коллекции `partners` требуется один составной индекс:
-
-- **Поле:** `momChatId` (ASC) — для выполнения запроса `getPartnershipByMom()` (`.where('momChatId', '==', momChatId).limit(1)`).
-
-Индекс необходимо создать в Firebase Console:
-
-| Коллекция | Поле | Направление |
-|-----------|------|-------------|
-| `partners` | `momChatId` | Ascending |
-
-> **Примечание:** Если индекс не создан, запрос `getPartnershipByMom()` будет отклонён Firestore с ошибкой `FAILED_PRECONDITION: The query requires an index.`.
-
----
-
-## Примеры документов
-
-### Партнёрство в статусе `pending` (ожидает привязки)
-
-```json
-{
-  "partnerCode": "XYZ789",
-  "momChatId": "333",
-  "partnerChatId": null,
-  "status": "pending",
-  "createdAt": "2026-06-15T10:00:00.000Z",
-  "updatedAt": "2026-06-15T10:00:00.000Z"
-}
-```
-
-### Партнёрство в статусе `active` (партнёр привязан)
-
-```json
-{
-  "partnerCode": "ABC123",
-  "momChatId": "111",
-  "partnerChatId": "222",
-  "status": "active",
-  "createdAt": "2026-06-15T09:00:00.000Z",
-  "updatedAt": "2026-06-15T09:30:00.000Z"
-}
-```
-
----
-
-## Сценарии доступа
-
-| Сценарий | Операция | Код |
-|----------|----------|-----|
-| Создание кода-приглашения | Создание документа (сервер) | `createPartner(code, { momChatId })` |
-| Привязка партнёра | Обновление документа (сервер) | `linkPartner(code, partnerChatId)` |
-| Чтение документа по коду | Прямой lookup | `getPartner(code)` |
-| Поиск по ID мамы | Запрос с фильтром | `getPartnershipByMom(momChatId)` |
-
----
-
-## Жизненный цикл документа
-
-1. **`pending`** — Документ создаётся, когда мама генерирует код-приглашение. Поля: `partnerCode`, `momChatId`, `partnerChatId: null`, `status: 'pending'`.
-2. **`active`** — Партнёр вводит код и бот привязывает его. Обновляются: `partnerChatId`, `status: 'active'`, `updatedAt`.
-3. **Удаление** — В текущей версии не предусмотрено. При необходимости партнёрство может быть удалено через сервер.
-
----
-
-## Связь с `users`
-
-Коллекция `partners` тесно связана с коллекцией `users`:
-
-- **`users.partnerCode`** — Поле в документе мамы (`users/{momChatId}`), содержащее тот же 6-символьный код. Это поле используется для отображения кода маме и для поиска партнёрства.
-- **`users.role`** — Роль пользователя (`'mom'` или `'partner'`). Партнёр получает роль `'partner'` после привязки.
-- **`partners.{partnerCode}.momChatId`** — Telegram chat ID мамы, связывающий документ с её профилем в `users`.
-- **`partners.{partnerCode}.partnerChatId`** — Telegram chat ID партнёра, связывающий документ с его профилем в `users`.
-
-Таким образом, три идентификатора (`partnerCode`, `momChatId`, `partnerChatId`) обеспечивают полную связь между коллекциями.
-
----
-
-## Правила безопасности Firestore
-
-| Коллекция | Чтение | Запись |
-|-----------|--------|--------|
-| `partners/{partnerCode}` | Мама (`momChatId == uid`) или привязанный партнёр (`partnerChatId == uid`) | Только сервер |
-
-### Принципы уточнённого правила
-
-- Мама может читать свой partnership, так как поле `momChatId` совпадает с её `request.auth.uid`.
-- Привязанный партнёр может читать тот же документ, так как поле `partnerChatId` совпадает с его `request.auth.uid`.
-- Сторонний пользователь (не мама и не партнёр) не может прочитать документ.
-- Запись разрешена только через firebase-admin (серверные функции).
-- Поле `partnerChatId` проверяется как есть: для `pending` (null) доступ есть только у мамы; для `active` доступ есть у обоих.
-
